@@ -75,32 +75,36 @@ export default function AdminCoursesPage() {
     // Separate course fields from lessons
     const { lessons, ...courseData } = form;
 
-    if (editingCourse) {
-      const result = await updateCourseAction(editingCourse.id, courseData);
-      if (!result.success) {
-        alert("Cillad ayaa dhacday: " + result.error);
+    try {
+      if (editingCourse) {
+        const result = await updateCourseAction(editingCourse.id, courseData);
+        if (!result.success) {
+          alert("Cillad ayaa dhacday: " + result.error);
+        } else {
+          setShowModal(false);
+          fetchCourses();
+        }
       } else {
-        setShowModal(false);
-        fetchCourses();
-      }
-      setSaving(false);
-    } else {
-      // Parse YouTube IDs before sending to server
-      const parsedLessons = lessons.map(l => ({
-        ...l,
-        youtube_video_id: parseYoutubeId(l.youtube_video_id)
-      }));
+        // Parse YouTube IDs before sending to server
+        const parsedLessons = lessons.map(l => ({
+          ...l,
+          youtube_video_id: parseYoutubeId(l.youtube_video_id)
+        }));
 
-      const result = await createCourseAction(courseData, parsedLessons);
-      setSaving(false);
-      
-      if (!result.success) {
-        alert("Cillad ayaa dhacday. Macluumaadkaagu wuu diiday sababtoo ah: " + result.error);
-      } else if (result.courseId) {
-        setShowModal(false);
-        fetchCourses();
-        window.location.href = `/admin/courses/${result.courseId}`;
+        const result = await createCourseAction(courseData, parsedLessons);
+        
+        if (!result.success) {
+          alert("Cillad ayaa dhacday. Macluumaadkaagu wuu diiday sababtoo ah: " + result.error);
+        } else if (result.courseId) {
+          setShowModal(false);
+          fetchCourses();
+          window.location.href = `/admin/courses/${result.courseId}`;
+        }
       }
+    } catch (err: any) {
+      alert("System Error: " + (err.message || "An unexpected error occurred."));
+    } finally {
+      setSaving(false);
     }
   };
 
