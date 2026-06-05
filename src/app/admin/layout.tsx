@@ -23,13 +23,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }
 
       // Check role in profiles table
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
 
-      if (profile?.role === "admin") {
+      if (error) {
+        console.error("Error fetching profile role:", error);
+      }
+
+      const userRole = profile?.role?.toLowerCase()?.trim();
+
+      if (userRole === "admin") {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
