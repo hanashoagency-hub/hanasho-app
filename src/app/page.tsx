@@ -14,7 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     setDrops(
-      Array.from({ length: 40 }).map((_, i) => ({
+      Array.from({ length: 10 }).map((_, i) => ({
         id: i,
         left: `${Math.random() * 100}%`,
         duration: `${Math.random() * 1 + 0.8}s`,
@@ -34,17 +34,16 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050505]">
-      {/* Global Glow Orbs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/[0.03] blur-[150px] rounded-full mix-blend-screen pointer-events-none animate-snooze" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-white/[0.03] blur-[150px] rounded-full mix-blend-screen pointer-events-none animate-snooze" style={{ animationDelay: "2s" }} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/[0.02] blur-[200px] rounded-full pointer-events-none -z-10 animate-snooze" style={{ animationDelay: "4s" }} />
+      {/* Global Glow Orbs - lightweight */}
+      <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/[0.03] blur-[80px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-white/[0.03] blur-[80px] rounded-full pointer-events-none" />
 
       {/* Rain Animation */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         {drops.map((drop) => (
           <div
             key={drop.id}
-            className="absolute top-0 w-[1px] h-[80px] bg-gradient-to-b from-transparent to-white/30 animate-rain"
+            className="absolute top-0 w-[1px] h-[60px] bg-gradient-to-b from-transparent to-white/20 animate-rain"
             style={{
               left: drop.left,
               animationDuration: drop.duration,
@@ -208,7 +207,7 @@ export default function Home() {
 
       {/* ================= ROADMAP SECTION ================= */}
       <section className="py-24 px-6 relative">
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-white/[0.03] blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 left-0 w-[200px] h-[200px] bg-white/[0.03] blur-[60px] rounded-full pointer-events-none" />
         
         <div className="mx-auto max-w-4xl text-center mb-16">
           <h2 className="font-heading text-3xl font-bold text-white md:text-5xl mb-4">
@@ -246,7 +245,7 @@ export default function Home() {
 
       {/* ================= AI SHOWCASE ================= */}
       <section className="py-24 px-6 border-y border-white/10 bg-[#0a0a0a] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/[0.03] blur-[150px] mix-blend-screen pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-white/[0.03] blur-[60px] pointer-events-none" />
         
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center gap-16 relative z-10">
           <div className="md:w-1/2 text-left">
@@ -391,7 +390,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-white/[0.03] to-transparent pointer-events-none" />
         
         <div className="mx-auto max-w-5xl rounded-[3rem] border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-12 text-center relative overflow-hidden backdrop-blur-xl shadow-[0_0_100px_rgba(217,217,217,0.08)]">
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white/[0.03] blur-[100px] rounded-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-white/[0.03] blur-[40px] rounded-full pointer-events-none" />
           
           <h2 className="relative z-10 font-heading text-4xl font-extrabold text-white md:text-6xl mb-6">
             Diyaar Ma U Tahay Inaad <br className="hidden md:block" />
@@ -414,7 +413,7 @@ export default function Home() {
       </section>
       {/* ================= ABOUT FOUNDER SECTION ================= */}
       <section id="about" className="py-24 px-6 relative border-t border-white/10 bg-[#050505]">
-        <div className="absolute top-1/2 right-0 w-[400px] h-[400px] bg-white/[0.03] blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 right-0 w-[200px] h-[200px] bg-white/[0.03] blur-[60px] rounded-full pointer-events-none" />
         
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center gap-16">
           <div className="md:w-1/2 flex justify-center">
