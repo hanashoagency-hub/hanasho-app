@@ -12,7 +12,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -21,7 +21,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -34,9 +34,13 @@ export default function RegisterPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      setSuccess(true);
+    } else if (data?.user?.identities?.length === 0) {
+      setError("This email is already registered. Please sign in instead.");
       setLoading(false);
+    } else {
+      // Auto-login and redirect to dashboard
+      router.push("/dashboard");
+      router.refresh();
     }
   };
 
@@ -54,24 +58,7 @@ export default function RegisterPage() {
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
-        <div className="w-full max-w-md text-center">
-          <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-10 shadow-2xl">
-            <div className="w-16 h-16 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-3">Check Your Email!</h2>
-            <p className="text-gray-400 mb-6">We sent a confirmation link to <span className="text-white font-medium">{email}</span>. Click the link to activate your account.</p>
-            <Link href="/login" className="inline-flex items-center gap-2 text-[#D9D9D9] hover:text-white font-medium transition-colors">
-              Back to Login <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
