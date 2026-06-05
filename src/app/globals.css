@@ -43,6 +43,10 @@
     --silver-border-hover: rgba(0, 0, 0, 0.25);
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
