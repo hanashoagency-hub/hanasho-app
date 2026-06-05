@@ -13,8 +13,8 @@ export async function POST(request: Request) {
 
     // Use service role key to securely bypass RLS for transactions & purchases
     const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://worerikjebqpeibrepgz.supabase.co",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvcmVyaWtqZWJxcGVpYnJlcGd6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDYzNTk4NiwiZXhwIjoyMDk2MjExOTg2fQ.rHBeYbUnD0WNCgUduf95ddjBx3cSrsTeoPtXMu0Y9dU"
     );
 
     const body = await request.json();
