@@ -14,6 +14,10 @@ interface Course {
   currency: string;
   is_published: boolean;
   created_at: string;
+  total_hours?: number;
+  total_lessons?: number;
+  benefits?: string;
+  materials_included?: string;
 }
 
 export default function AdminCoursesPage() {
@@ -21,7 +25,10 @@ export default function AdminCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", cover_image: "", price: 0, currency: "USD" });
+  const [form, setForm] = useState({ 
+    title: "", description: "", cover_image: "", price: 0, currency: "USD",
+    total_hours: 0, total_lessons: 0, benefits: "", materials_included: ""
+  });
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
 
@@ -35,13 +42,21 @@ export default function AdminCoursesPage() {
 
   const openCreate = () => {
     setEditingCourse(null);
-    setForm({ title: "", description: "", cover_image: "", price: 0, currency: "USD" });
+    setForm({ 
+      title: "", description: "", cover_image: "", price: 0, currency: "USD",
+      total_hours: 0, total_lessons: 0, benefits: "", materials_included: ""
+    });
     setShowModal(true);
   };
 
   const openEdit = (course: Course) => {
     setEditingCourse(course);
-    setForm({ title: course.title, description: course.description || "", cover_image: course.cover_image || "", price: course.price, currency: course.currency });
+    setForm({ 
+      title: course.title, description: course.description || "", cover_image: course.cover_image || "", 
+      price: course.price, currency: course.currency,
+      total_hours: course.total_hours || 0, total_lessons: course.total_lessons || 0,
+      benefits: course.benefits || "", materials_included: course.materials_included || ""
+    });
     setShowModal(true);
   };
 
@@ -50,7 +65,7 @@ export default function AdminCoursesPage() {
     if (editingCourse) {
       await supabase.from("courses").update(form).eq("id", editingCourse.id);
     } else {
-      await supabase.from("courses").insert(form);
+      await supabase.from("courses").insert({ ...form, is_published: true });
     }
     setSaving(false);
     setShowModal(false);
@@ -165,6 +180,27 @@ export default function AdminCoursesPage() {
                     <option value="SLSH">SLSH (Somali Shilling)</option>
                   </select>
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-300 block mb-1">Total Lessons</label>
+                  <input type="number" value={form.total_lessons} onChange={(e) => setForm({ ...form, total_lessons: parseInt(e.target.value) || 0 })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="e.g. 12" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-300 block mb-1">Total Hours</label>
+                  <input type="number" step="0.5" value={form.total_hours} onChange={(e) => setForm({ ...form, total_hours: parseFloat(e.target.value) || 0 })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="e.g. 4.5" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-300 block mb-1">Benefits (What you will learn)</label>
+                <textarea value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} rows={2} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 resize-none" placeholder="E.g. Build real world apps, Learn advanced React..." />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-300 block mb-1">Included Materials</label>
+                <input value={form.materials_included} onChange={(e) => setForm({ ...form, materials_included: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="e.g. 3 PDF Guides, Source Code, Certificate" />
               </div>
             </div>
             <div className="flex gap-3 mt-8">
