@@ -18,7 +18,7 @@ export default function LoginPage() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     };
     checkSession();
@@ -38,7 +38,7 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      router.replace("/dashboard");
       router.refresh();
     }
   };

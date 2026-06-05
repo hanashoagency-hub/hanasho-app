@@ -20,7 +20,7 @@ export default function RegisterPage() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
     };
     checkSession();
@@ -49,7 +49,7 @@ export default function RegisterPage() {
       setLoading(false);
     } else {
       // Auto-login and redirect to dashboard
-      router.push("/dashboard");
+      router.replace("/dashboard");
       router.refresh();
     }
   };
