@@ -63,13 +63,25 @@ export default function AdminCoursesPage() {
   const handleSave = async () => {
     setSaving(true);
     if (editingCourse) {
-      await supabase.from("courses").update(form).eq("id", editingCourse.id);
+      const { error } = await supabase.from("courses").update(form).eq("id", editingCourse.id);
+      if (error) {
+        alert("Cillad ayaa dhacday: " + error.message);
+      } else {
+        setShowModal(false);
+        fetchCourses();
+      }
+      setSaving(false);
     } else {
-      await supabase.from("courses").insert({ ...form, is_published: true });
+      const { data, error } = await supabase.from("courses").insert({ ...form, is_published: true }).select().single();
+      setSaving(false);
+      if (error) {
+        alert("Cillad ayaa dhacday (Malaha SQL script-kii maadan Run garayn): " + error.message);
+      } else if (data) {
+        setShowModal(false);
+        // Automatically redirect to the curriculum builder to add lessons/YouTube links
+        window.location.href = `/admin/courses/${data.id}`;
+      }
     }
-    setSaving(false);
-    setShowModal(false);
-    fetchCourses();
   };
 
   const handleDelete = async (id: string) => {
