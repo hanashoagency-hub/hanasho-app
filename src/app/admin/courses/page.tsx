@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, BookOpen } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, BookOpen, ChevronRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { createCourseAction, updateCourseAction, deleteCourseAction, togglePublishAction } from "../actions";
 
 interface Course {
   id: string;
@@ -75,41 +76,30 @@ export default function AdminCoursesPage() {
     const { lessons, ...courseData } = form;
 
     if (editingCourse) {
-      const { error } = await supabase.from("courses").update(courseData).eq("id", editingCourse.id);
-      if (error) {
-        alert("Cillad ayaa dhacday: " + error.message);
+      const result = await updateCourseAction(editingCourse.id, courseData);
+      if (!result.success) {
+        alert("Cillad ayaa dhacday: " + result.error);
       } else {
         setShowModal(false);
         fetchCourses();
       }
       setSaving(false);
     } else {
-      const { data: course, error } = await supabase.from("courses").insert({ ...courseData, is_published: true }).select().single();
-      if (error) {
-        setSaving(false);
-        alert("Cillad ayaa dhacday (Malaha SQL script-kii maadan Run garayn): " + error.message);
-      } else if (course) {
-        // Create a default module
-        const { data: mod } = await supabase.from("modules").insert({ course_id: course.id, title: "Module 1", sort_order: 0 }).select().single();
-        
-        // Bulk insert lessons if any exist
-        if (mod && lessons.length > 0) {
-          const validLessons = lessons.filter(l => l.title || l.youtube_video_id).map((l, i) => ({
-            module_id: mod.id,
-            title: l.title || `Lesson ${i + 1}`,
-            youtube_video_id: parseYoutubeId(l.youtube_video_id),
-            duration_minutes: l.duration_minutes,
-            is_preview: l.is_preview,
-            sort_order: i
-          }));
+      // Parse YouTube IDs before sending to server
+      const parsedLessons = lessons.map(l => ({
+        ...l,
+        youtube_video_id: parseYoutubeId(l.youtube_video_id)
+      }));
 
-          if (validLessons.length > 0) {
-            await supabase.from("lessons").insert(validLessons);
-          }
-        }
-        setSaving(false);
+      const result = await createCourseAction(courseData, parsedLessons);
+      setSaving(false);
+      
+      if (!result.success) {
+        alert("Cillad ayaa dhacday. Macluumaadkaagu wuu diiday sababtoo ah: " + result.error);
+      } else if (result.courseId) {
         setShowModal(false);
         fetchCourses();
+        window.location.href = `/admin/courses/${result.courseId}`;
       }
     }
   };
@@ -131,13 +121,13 @@ export default function AdminCoursesPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Ma hubtaa inaad tirtirto koorsadan?")) {
-      await supabase.from("courses").delete().eq("id", id);
+      await deleteCourseAction(id);
       fetchCourses();
     }
   };
 
   const togglePublish = async (course: Course) => {
-    await supabase.from("courses").update({ is_published: !course.is_published }).eq("id", course.id);
+    await togglePublishAction(course.id, !course.is_published);
     fetchCourses();
   };
 

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Plus, Trash2, GripVertical, Play, ChevronDown, ChevronRight, Loader2, ArrowLeft, Edit, Check, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { createModuleAction, deleteModuleAction, createLessonAction, deleteLessonAction } from "../../actions";
 
 interface Module {
   id: string;
@@ -73,11 +74,7 @@ export default function CourseBuilderPage() {
   const addModule = async () => {
     if (!newModuleTitle.trim()) return;
     setAddingModule(true);
-    await supabase.from("modules").insert({
-      course_id: courseId,
-      title: newModuleTitle,
-      sort_order: modules.length,
-    });
+    await createModuleAction(courseId, newModuleTitle, modules.length);
     setNewModuleTitle("");
     setAddingModule(false);
     fetchData();
@@ -85,7 +82,7 @@ export default function CourseBuilderPage() {
 
   const deleteModule = async (id: string) => {
     if (confirm("Delete this module and all its lessons?")) {
-      await supabase.from("modules").delete().eq("id", id);
+      await deleteModuleAction(id, courseId);
       fetchData();
     }
   };
@@ -93,21 +90,22 @@ export default function CourseBuilderPage() {
   const addLesson = async (moduleId: string) => {
     if (!lessonForm.title.trim()) return;
     const mod = modules.find(m => m.id === moduleId);
-    await supabase.from("lessons").insert({
-      module_id: moduleId,
+    
+    await createLessonAction(moduleId, {
       title: lessonForm.title,
-      youtube_video_id: lessonForm.youtube_video_id,
+      youtube_video_id: parseYoutubeId(lessonForm.youtube_video_id),
       duration_minutes: lessonForm.duration_minutes,
       is_preview: lessonForm.is_preview,
       sort_order: mod ? mod.lessons.length : 0,
-    });
+    }, courseId);
+    
     setLessonForm({ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false });
     setAddingLessonTo(null);
     fetchData();
   };
 
   const deleteLesson = async (id: string) => {
-    await supabase.from("lessons").delete().eq("id", id);
+    await deleteLessonAction(id, courseId);
     fetchData();
   };
 
