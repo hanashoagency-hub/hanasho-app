@@ -2,16 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X, Globe, ChevronDown, Sun, Moon, ShoppingCart } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, X, Globe, ChevronDown, Sun, Moon, ShoppingCart, User, LogOut, LayoutDashboard } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("EN");
   const [theme, setTheme] = useState("dark");
+  
+  // Auth state
+  const [user, setUser] = useState<any>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("hanasho-theme") || "dark";
@@ -43,6 +50,22 @@ export default function Header() {
     if (match) {
       setCurrentLang(match[1].toUpperCase());
     }
+
+    // Check auth session
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+    };
+    checkUser();
+
+    // Listen to auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -50,6 +73,14 @@ export default function Header() {
     setTheme(next);
     localStorage.setItem("hanasho-theme", next);
     document.documentElement.setAttribute("data-theme", next === "grey" ? "grey" : "");
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfileOpen(false);
+    router.push("/");
+    router.refresh();
   };
 
   const languages = [
@@ -70,7 +101,6 @@ export default function Header() {
     { href: "/courses", label: "Courses" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/community", label: "Community" },
-    { href: "/dashboard", label: "Dashboard" },
   ];
 
   const changeLanguage = (langCode: string) => {
@@ -86,7 +116,7 @@ export default function Header() {
     window.location.reload();
   };
 
-  if (pathname?.startsWith("/dashboard")) return null;
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin")) return null;
 
   return (
     <>
@@ -168,18 +198,57 @@ export default function Header() {
               </span>
             </Link>
 
-            <Link
-              href="/login"
-              className="text-sm font-medium text-white/70 hover:text-white transition-colors"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-full bg-white px-6 py-2.5 text-sm font-heading font-semibold text-black transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.25)]"
-            >
-              Sign Up
-            </Link>
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 pl-3 pr-4 py-2 hover:bg-white/10 transition-colors"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-white/90">Account</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-white/50" />
+                </button>
+
+                {profileOpen && (
+                  <div className="absolute top-full right-0 mt-3 w-48 bg-[#0A0A0A] border border-white/10 rounded-2xl shadow-2xl py-2 flex flex-col z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-white/5 mb-1">
+                      <p className="text-xs text-white/50 truncate">Signed in as</p>
+                      <p className="text-sm text-white font-medium truncate">{user.email}</p>
+                    </div>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4" /> Dashboard
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left w-full"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-white/70 hover:text-white transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-full bg-white px-6 py-2.5 text-sm font-heading font-semibold text-black transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.25)]"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Hamburger */}
@@ -209,20 +278,41 @@ export default function Header() {
             {link.label}
           </Link>
         ))}
-        <Link
-          href="/login"
-          onClick={() => setMobileOpen(false)}
-          className="font-heading text-xl text-white/60 hover:text-white transition-colors"
-        >
-          Login
-        </Link>
-        <Link
-          href="/register"
-          onClick={() => setMobileOpen(false)}
-          className="mt-4 rounded-full bg-white px-8 py-3 font-heading font-semibold text-black"
-        >
-          Sign Up
-        </Link>
+
+        {user ? (
+          <>
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className="font-heading text-xl text-white/80 hover:text-white transition-colors"
+            >
+              Dashboard
+            </Link>
+            <button
+              onClick={() => { setMobileOpen(false); handleSignOut(); }}
+              className="mt-4 rounded-full bg-red-500/10 border border-red-500/20 px-8 py-3 font-heading font-semibold text-red-400"
+            >
+              Sign Out
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/login"
+              onClick={() => setMobileOpen(false)}
+              className="font-heading text-xl text-white/60 hover:text-white transition-colors"
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              onClick={() => setMobileOpen(false)}
+              className="mt-4 rounded-full bg-white px-8 py-3 font-heading font-semibold text-black"
+            >
+              Sign Up
+            </Link>
+          </>
+        )}
       </div>
       <div id="google_translate_element" style={{ display: "none" }}></div>
     </>
