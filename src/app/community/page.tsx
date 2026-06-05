@@ -67,9 +67,9 @@ export default function CommunityPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] font-sans selection:bg-white/20">
+    <div className="min-h-screen bg-[#050505] font-sans selection:bg-white/20 pt-24">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 pt-8 pb-4 px-6 md:px-10">
+      <div className="sticky top-0 z-20 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 pt-4 pb-4 px-6 md:px-10">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
