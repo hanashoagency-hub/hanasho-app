@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Globe, ChevronDown, Sun, Moon } from "lucide-react";
+import { Menu, X, Globe, ChevronDown, Sun, Moon, ShoppingCart } from "lucide-react";
 
 export default function Header() {
   const pathname = usePathname();
@@ -160,6 +160,13 @@ export default function Header() {
                 <Moon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
               )}
             </button>
+
+            <Link href="/checkout" className="relative w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all duration-300 hover:scale-110">
+              <ShoppingCart className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                0
+              </span>
+            </Link>
 
             <Link
               href="/login"

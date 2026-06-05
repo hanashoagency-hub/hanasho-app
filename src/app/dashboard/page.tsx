@@ -1,183 +1,100 @@
-"use client";
+import React from "react";
+import { BookOpen, Clock, Award } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
+import Link from "next/link";
 
-import React from 'react';
-import { 
-  Play, 
-  Award, 
-  Clock, 
-  CheckCircle2, 
-  ArrowRight,
-  Sparkles,
-  TrendingUp,
-  MessageSquare
-} from 'lucide-react';
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export default function DashboardPage() {
-  const courses = [
-    {
-      id: 1,
-      title: 'AI Automations & Agents',
-      instructor: 'Dr. Sarah Chen',
-      progress: 60,
-      image: 'bg-gradient-to-br from-white/10 to-white/5',
-      iconColor: 'text-[#D9D9D9]',
-      totalLessons: 24,
-      completedLessons: 14,
-    },
-    {
-      id: 2,
-      title: 'Advanced Web3 Development',
-      instructor: 'Alex Mercer',
-      progress: 35,
-      image: 'bg-gradient-to-br from-white/10 to-white/5',
-      iconColor: 'text-[#D9D9D9]',
-      totalLessons: 32,
-      completedLessons: 11,
-    },
-    {
-      id: 3,
-      title: 'Machine Learning Fundamentals',
-      instructor: 'Prof. James Webb',
-      progress: 85,
-      image: 'bg-gradient-to-br from-white/10 to-white/5',
-      iconColor: 'text-[#D9D9D9]',
-      totalLessons: 18,
-      completedLessons: 15,
-    }
-  ];
+  if (!user) return null;
 
-  const recentActivity = [
-    { id: 1, type: 'course', title: 'Completed "Introduction to LLMs"', time: '2 hours ago', icon: CheckCircle2, color: 'text-[#D9D9D9]', bg: 'bg-white/5' },
-    { id: 2, type: 'achievement', title: 'Earned "Fast Learner" Badge', time: '5 hours ago', icon: Award, color: 'text-[#D9D9D9]', bg: 'bg-white/5' },
-    { id: 3, type: 'forum', title: 'Replied to "Best practices for React"', time: '1 day ago', icon: MessageSquare, color: 'text-[#D9D9D9]', bg: 'bg-white/5' },
-  ];
+  // Fetch purchased courses
+  const { data: purchases } = await supabase
+    .from("purchases")
+    .select("course_id, courses(id, title, cover_image, description)")
+    .eq("user_id", user.id);
+
+  const purchasedCourses = purchases?.map(p => p.courses) || [];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight flex items-center gap-3">
-            Welcome back, Student
-            <Sparkles className="w-6 h-6 text-[#D9D9D9] animate-pulse" />
-          </h1>
-          <p className="text-slate-400 mt-2 text-sm md:text-base">
-            You're making great progress. Keep up the momentum!
-          </p>
+    <div>
+      <header className="mb-10">
+        <h1 className="text-3xl font-heading font-bold text-white mb-2">My Learning Dashboard</h1>
+        <p className="text-white/60">Pick up where you left off and track your progress.</p>
+      </header>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-blue-500/10">
+            <BookOpen className="w-7 h-7 text-blue-400" />
+          </div>
+          <div>
+            <p className="text-white/50 text-sm font-medium mb-1">Enrolled Courses</p>
+            <h3 className="text-2xl font-bold text-white">{purchasedCourses.length}</h3>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 backdrop-blur-md flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-[#D9D9D9] animate-pulse" />
-            <span className="text-sm font-medium text-slate-300">Daily Streak: 12 days</span>
+        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-purple-500/10">
+            <Clock className="w-7 h-7 text-purple-400" />
+          </div>
+          <div>
+            <p className="text-white/50 text-sm font-medium mb-1">Hours Learned</p>
+            <h3 className="text-2xl font-bold text-white">0.0</h3>
+          </div>
+        </div>
+        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-green-500/10">
+            <Award className="w-7 h-7 text-green-400" />
+          </div>
+          <div>
+            <p className="text-white/50 text-sm font-medium mb-1">Certificates</p>
+            <h3 className="text-2xl font-bold text-white">0</h3>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content Column (Courses) */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-[#D9D9D9]" />
-              Continue Learning
-            </h2>
-            <button className="text-sm text-[#D9D9D9] hover:text-white transition-colors flex items-center gap-1">
-              View all <ArrowRight className="w-4 h-4" />
-            </button>
+      {/* Courses List */}
+      <div>
+        <h2 className="text-xl font-bold text-white mb-6">My Enrolled Courses</h2>
+        {purchasedCourses.length === 0 ? (
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-10 text-center">
+            <BookOpen className="w-12 h-12 text-white/20 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-white mb-2">You haven't enrolled in any courses yet</h3>
+            <p className="text-white/50 mb-6">Explore our marketplace to find the perfect course for you.</p>
+            <Link href="/courses" className="inline-flex bg-white text-black font-semibold px-6 py-3 rounded-xl hover:scale-105 transition-transform">
+              Browse Courses
+            </Link>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {courses.map((course) => (
-              <div 
-                key={course.id} 
-                className="group relative rounded-2xl bg-white/[0.02] border border-white/5 overflow-hidden hover:border-white/20 hover:bg-white/[0.04] transition-all duration-500 flex flex-col"
-              >
-                <div className={`h-32 ${course.image} relative p-6 flex items-end justify-between`}>
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#050505] to-transparent opacity-80" />
-                  <div className="relative z-10 w-full">
-                    <h3 className="text-lg font-bold text-white leading-tight mb-1">{course.title}</h3>
-                    <p className="text-sm text-slate-300">{course.instructor}</p>
-                  </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {purchasedCourses.map((course: any) => (
+              <Link key={course.id} href={`/courses/${course.id}`} className="bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden group hover:border-white/30 transition-all">
+                <div className="aspect-video w-full relative overflow-hidden bg-white/5">
+                  {course.cover_image ? (
+                    <img src={course.cover_image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <BookOpen className="w-10 h-10 text-white/20" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                 </div>
-                
-                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-slate-400">Progress</span>
-                      <span className="text-white font-medium">{course.progress}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-[#D9D9D9]/60 to-white/40 rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${course.progress}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-slate-500 mt-3 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      {course.completedLessons} of {course.totalLessons} lessons completed
-                    </p>
-                  </div>
+                <div className="p-5">
+                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition-colors line-clamp-1">{course.title}</h3>
+                  <p className="text-white/50 text-sm line-clamp-2 mb-4">{course.description}</p>
                   
-                  <button className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-[#D9D9D9] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(217,217,217,0.15)]">
-                    <Play className="w-4 h-4" /> Resume Course
-                  </button>
+                  {/* Progress Bar Dummy */}
+                  <div className="w-full bg-white/10 rounded-full h-1.5 mb-2 overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-1.5 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                  <p className="text-xs text-white/40 text-right">0% Complete</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
-        </div>
-
-        {/* Sidebar Column (Notifications & Activity) */}
-        <div className="space-y-8">
-          {/* Notifications Panel */}
-          <div className="rounded-2xl bg-white/[0.02] border border-white/5 p-6 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-white">Notifications</h3>
-              <span className="px-2 py-0.5 rounded-md bg-white/10 text-[#D9D9D9] text-xs font-medium">2 New</span>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex gap-4">
-                <div className="w-2 h-2 rounded-full bg-[#D9D9D9] mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-sm text-slate-200 font-medium">Live Q&A Session Starting</p>
-                  <p className="text-xs text-slate-400 mt-1">Join Dr. Sarah Chen for the weekly AI Automations Q&A in 15 mins.</p>
-                </div>
-              </div>
-              <div className="p-3 rounded-xl hover:bg-white/5 transition-colors flex gap-4 cursor-pointer">
-                <div className="w-2 h-2 rounded-full bg-transparent mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-sm text-slate-300 font-medium">Assignment Graded</p>
-                  <p className="text-xs text-slate-500 mt-1">Your Smart Contract assignment was graded: 98/100.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="rounded-2xl bg-white/[0.02] border border-white/5 p-6 backdrop-blur-sm">
-            <h3 className="text-lg font-bold text-white mb-6">Recent Activity</h3>
-            <div className="space-y-6">
-              {recentActivity.map((activity, idx) => {
-                const Icon = activity.icon;
-                return (
-                  <div key={activity.id} className="flex gap-4 relative">
-                    {idx !== recentActivity.length - 1 && (
-                      <div className="absolute left-4 top-10 bottom-[-24px] w-px bg-white/5" />
-                    )}
-                    <div className={`w-8 h-8 rounded-full ${activity.bg} flex items-center justify-center shrink-0 z-10`}>
-                      <Icon className={`w-4 h-4 ${activity.color}`} />
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-300 font-medium">{activity.title}</p>
-                      <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
