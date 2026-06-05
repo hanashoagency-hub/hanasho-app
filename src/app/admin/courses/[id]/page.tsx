@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Plus, Trash2, GripVertical, Youtube, ChevronDown, ChevronRight, Loader2, ArrowLeft, Edit, Check, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, Play, ChevronDown, ChevronRight, Loader2, ArrowLeft, Edit, Check, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 interface Module {
@@ -157,7 +157,7 @@ export default function CourseBuilderPage() {
                 {mod.lessons.map((lesson, lessonIndex) => (
                   <div key={lesson.id} className="flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5 transition-colors group">
                     <span className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-sm font-bold text-white/30">{lessonIndex + 1}</span>
-                    <Youtube className="w-5 h-5 text-red-400" />
+                    <Play className="w-5 h-5 text-red-400" />
                     <div className="flex-1">
                       <p className="text-white font-medium text-sm">{lesson.title}</p>
                       <p className="text-white/30 text-xs">{lesson.duration_minutes} min • {lesson.youtube_video_id || "No video"} {lesson.is_preview && <span className="text-green-400">• Free Preview</span>}</p>
