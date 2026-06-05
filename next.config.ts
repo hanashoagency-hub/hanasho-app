@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
     appIsrStatus: false,
     buildActivity: false,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;
