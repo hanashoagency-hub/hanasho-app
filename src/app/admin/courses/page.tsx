@@ -27,7 +27,8 @@ export default function AdminCoursesPage() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState({ 
     title: "", description: "", cover_image: "", price: 0, currency: "USD",
-    total_hours: 0, total_lessons: 0, benefits: "", materials_included: ""
+    total_hours: 0, total_lessons: 0, benefits: "", materials_included: "",
+    lessons: [{ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }]
   });
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
@@ -44,7 +45,8 @@ export default function AdminCoursesPage() {
     setEditingCourse(null);
     setForm({ 
       title: "", description: "", cover_image: "", price: 0, currency: "USD",
-      total_hours: 0, total_lessons: 0, benefits: "", materials_included: ""
+      total_hours: 0, total_lessons: 0, benefits: "", materials_included: "",
+      lessons: [{ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }]
     });
     setShowModal(true);
   };
@@ -55,15 +57,25 @@ export default function AdminCoursesPage() {
       title: course.title, description: course.description || "", cover_image: course.cover_image || "", 
       price: course.price, currency: course.currency,
       total_hours: course.total_hours || 0, total_lessons: course.total_lessons || 0,
-      benefits: course.benefits || "", materials_included: course.materials_included || ""
+      benefits: course.benefits || "", materials_included: course.materials_included || "",
+      lessons: [] // Lessons are managed via Curriculum Builder for existing courses
     });
     setShowModal(true);
   };
 
+  const parseYoutubeId = (input: string) => {
+    if (!input) return "";
+    const match = input.match(/(?:v=|youtu\.be\/|\/embed\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : input;
+  };
+
   const handleSave = async () => {
     setSaving(true);
+    // Separate course fields from lessons
+    const { lessons, ...courseData } = form;
+
     if (editingCourse) {
-      const { error } = await supabase.from("courses").update(form).eq("id", editingCourse.id);
+      const { error } = await supabase.from("courses").update(courseData).eq("id", editingCourse.id);
       if (error) {
         alert("Cillad ayaa dhacday: " + error.message);
       } else {
@@ -72,16 +84,49 @@ export default function AdminCoursesPage() {
       }
       setSaving(false);
     } else {
-      const { data, error } = await supabase.from("courses").insert({ ...form, is_published: true }).select().single();
-      setSaving(false);
+      const { data: course, error } = await supabase.from("courses").insert({ ...courseData, is_published: true }).select().single();
       if (error) {
+        setSaving(false);
         alert("Cillad ayaa dhacday (Malaha SQL script-kii maadan Run garayn): " + error.message);
-      } else if (data) {
+      } else if (course) {
+        // Create a default module
+        const { data: mod } = await supabase.from("modules").insert({ course_id: course.id, title: "Module 1", sort_order: 0 }).select().single();
+        
+        // Bulk insert lessons if any exist
+        if (mod && lessons.length > 0) {
+          const validLessons = lessons.filter(l => l.title || l.youtube_video_id).map((l, i) => ({
+            module_id: mod.id,
+            title: l.title || `Lesson ${i + 1}`,
+            youtube_video_id: parseYoutubeId(l.youtube_video_id),
+            duration_minutes: l.duration_minutes,
+            is_preview: l.is_preview,
+            sort_order: i
+          }));
+
+          if (validLessons.length > 0) {
+            await supabase.from("lessons").insert(validLessons);
+          }
+        }
+        setSaving(false);
         setShowModal(false);
-        // Automatically redirect to the curriculum builder to add lessons/YouTube links
-        window.location.href = `/admin/courses/${data.id}`;
+        fetchCourses();
       }
     }
+  };
+
+  const addLessonField = () => {
+    setForm({ ...form, lessons: [...form.lessons, { title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }] });
+  };
+
+  const updateLessonField = (index: number, field: string, value: any) => {
+    const newLessons = [...form.lessons];
+    (newLessons[index] as any)[field] = value;
+    setForm({ ...form, lessons: newLessons });
+  };
+
+  const removeLessonField = (index: number) => {
+    const newLessons = form.lessons.filter((_, i) => i !== index);
+    setForm({ ...form, lessons: newLessons });
   };
 
   const handleDelete = async (id: string) => {
@@ -164,10 +209,17 @@ export default function AdminCoursesPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6">
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl p-8 w-full max-w-lg shadow-2xl">
-            <h2 className="text-2xl font-bold text-white mb-6">{editingCourse ? "Edit Course" : "Create New Course"}</h2>
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 overflow-y-auto">
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl p-8 w-full max-w-4xl shadow-2xl my-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">{editingCourse ? "Edit Course" : "Create New Course & Lessons"}</h2>
+              <button onClick={() => setShowModal(false)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Left Column: Course Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white/80 border-b border-white/10 pb-2">Course Details</h3>
               <div>
                 <label className="text-sm font-medium text-gray-300 block mb-1">Course Title</label>
                 <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="e.g. Web Development Basics" />
@@ -210,12 +262,68 @@ export default function AdminCoursesPage() {
                 <textarea value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} rows={2} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 resize-none" placeholder="E.g. Build real world apps, Learn advanced React..." />
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-300 block mb-1">Included Materials</label>
-                <input value={form.materials_included} onChange={(e) => setForm({ ...form, materials_included: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="e.g. 3 PDF Guides, Source Code, Certificate" />
               </div>
+
+              {/* Right Column: Lessons Builder (Only shown during creation) */}
+              {!editingCourse ? (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white/80 border-b border-white/10 pb-2 flex justify-between items-center">
+                    <span>Lessons & Videos</span>
+                    <button onClick={addLessonField} className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                      <Plus className="w-3 h-3" /> Add Lesson
+                    </button>
+                  </h3>
+                  
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#333 transparent' }}>
+                    {form.lessons.map((lesson, idx) => (
+                      <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-4 relative group">
+                        <button onClick={() => removeLessonField(idx)} className="absolute top-3 right-3 text-red-400/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <div className="mb-3 pr-8">
+                          <input value={lesson.title} onChange={(e) => updateLessonField(idx, 'title', e.target.value)} className="w-full bg-transparent border-b border-white/10 py-1 text-white placeholder-gray-500 focus:outline-none focus:border-white/30 text-sm font-medium" placeholder={`Lesson ${idx + 1} Title`} />
+                        </div>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-xs text-white/50 mb-1 block">YouTube URL / Embed Link</label>
+                            <input value={lesson.youtube_video_id} onChange={(e) => updateLessonField(idx, 'youtube_video_id', e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="https://youtube.com/..." />
+                          </div>
+                          <div className="flex gap-4">
+                            <div className="flex-1">
+                              <label className="text-xs text-white/50 mb-1 block">Duration (min)</label>
+                              <input type="number" value={lesson.duration_minutes} onChange={(e) => updateLessonField(idx, 'duration_minutes', parseInt(e.target.value) || 0)} className="w-full bg-black/30 border border-white/10 rounded-lg py-2 px-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="e.g. 10" />
+                            </div>
+                            <div className="flex-1 flex items-end pb-2">
+                              <label className="flex items-center gap-2 text-xs text-white/60 cursor-pointer hover:text-white">
+                                <input type="checkbox" checked={lesson.is_preview} onChange={(e) => updateLessonField(idx, 'is_preview', e.target.checked)} className="rounded bg-black/30 border-white/20 text-white" />
+                                Free Preview
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {form.lessons.length === 0 && (
+                      <div className="text-center py-8 text-white/30 text-sm border border-dashed border-white/10 rounded-xl">
+                        No lessons added. <button onClick={addLessonField} className="text-white hover:underline">Add one now</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
+                  <BookOpen className="w-12 h-12 text-white/20 mb-4" />
+                  <h3 className="text-lg font-semibold text-white mb-2">Curriculum Builder</h3>
+                  <p className="text-white/50 text-sm mb-6">To manage lessons and modules for an existing course, please use the Curriculum Builder.</p>
+                  <Link href={`/admin/courses/${editingCourse.id}`} className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2">
+                    Open Curriculum Builder <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              )}
             </div>
-            <div className="flex gap-3 mt-8">
+            
+            <div className="flex gap-3 mt-8 border-t border-white/10 pt-6">
               <button onClick={() => setShowModal(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 transition-colors">Cancel</button>
               <button onClick={handleSave} disabled={saving || !form.title} className="flex-1 py-3 rounded-xl bg-white text-black font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : editingCourse ? "Save Changes" : "Create Course"}

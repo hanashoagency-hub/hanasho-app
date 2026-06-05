@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createClient as createServerClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const supabaseServer = await createServerClient();
+    const { data: { user } } = await supabaseServer.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Use service role key to securely bypass RLS for transactions & purchases
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     const body = await request.json();
     const { courseId, phoneNumber, amount, paymentMethod } = body;
@@ -71,7 +78,7 @@ export async function POST(request: Request) {
     console.log("WaafiPay Response:", JSON.stringify(data));
 
     // Save transaction in database regardless of success/fail first
-    const { data: tx, error: txError } = await supabase.from('transactions').insert({
+    const { data: tx, error: txError } = await supabaseAdmin.from('transactions').insert({
       user_id: user.id,
       course_id: courseId,
       amount,
@@ -89,7 +96,7 @@ export async function POST(request: Request) {
 
     if (data.responseCode === '2001') {
       // Payment successful, grant access
-      await supabase.from('purchases').insert({
+      await supabaseAdmin.from('purchases').insert({
         user_id: user.id,
         course_id: courseId
       });
