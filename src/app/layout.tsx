@@ -33,9 +33,14 @@ export default function RootLayout({
   return (
     <html lang="so" dir="ltr">
       <body
-        className={`${inter.variable} ${manrope.variable} bg-grid-pattern antialiased`}
+        className={`${inter.variable} ${manrope.variable} antialiased min-h-screen relative`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
+        <div className="site-bg">
+          <div className="corner-dots corner-dots-tr"></div>
+          <div className="corner-dots corner-dots-bl"></div>
+        </div>
+        
         <Header />
         {children}
         <Footer />

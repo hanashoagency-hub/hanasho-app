@@ -15,7 +15,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[var(--bg-primary)]">
+    <div className="relative min-h-screen bg-transparent">
       {/* ================= HERO SECTION ================= */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 flex flex-col items-center justify-center text-center">
         <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tight text-[var(--text-primary)] max-w-5xl leading-tight text-center mx-auto mb-6 relative z-10">

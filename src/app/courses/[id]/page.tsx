@@ -148,11 +148,11 @@ export default function CoursePage() {
   const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const currentLessonDone = currentLessonId ? completedIds.has(currentLessonId) : false;
 
-  if (loading) return <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--text-secondary)]" /></div>;
-  if (!course) return <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center text-[var(--text-primary)]">Course not found.</div>;
+  if (loading) return <div className="min-h-screen bg-transparent flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--text-secondary)]" /></div>;
+  if (!course) return <div className="min-h-screen bg-transparent flex items-center justify-center text-[var(--text-primary)]">Course not found.</div>;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col md:flex-row overflow-hidden pt-20 md:pt-0">
+    <div className="min-h-screen bg-transparent text-[var(--text-primary)] flex flex-col md:flex-row overflow-hidden pt-20 md:pt-0">
       
       {/* Mobile Header / Sidebar Toggle */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] fixed top-0 w-full z-50 mt-[72px]">

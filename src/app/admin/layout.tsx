@@ -50,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[var(--text-secondary)]" />
       </div>
     );
@@ -58,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-transparent flex items-center justify-center p-6">
         <div className="text-center bg-[var(--bg-secondary)] border border-red-500/20 rounded-[24px] p-10 max-w-md w-full">
           <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <ShieldAlert className="w-10 h-10 text-red-400" />
@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex text-[var(--text-primary)] font-body">
+    <div className="min-h-screen bg-transparent flex text-[var(--text-primary)] font-body">
       {/* Sidebar */}
       <aside className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col fixed inset-y-0 left-0 z-50">
         <div className="p-6 border-b border-[var(--border-color)]">
@@ -112,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 className={`flex items-center gap-3 px-4 py-3 rounded-[12px] font-bold text-sm transition-colors ${
                   isActive
                     ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] bg-transparent hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 <item.icon className={`w-5 h-5 ${isActive ? 'text-[var(--brand-primary)]' : 'text-[var(--text-secondary)]'}`} />

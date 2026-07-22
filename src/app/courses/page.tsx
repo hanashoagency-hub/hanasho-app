@@ -32,7 +32,7 @@ export default function CoursesCatalogPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-transparent pb-24 relative overflow-hidden">
       {/* Header */}
       <div className="relative pt-32 pb-16 px-6 overflow-hidden bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
         <div className="max-w-7xl mx-auto relative z-10 text-center">

@@ -49,7 +49,7 @@ export default function ServicesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pt-32 pb-24 px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-transparent pt-32 pb-24 px-6 relative overflow-hidden">
       <div className="mx-auto max-w-7xl relative z-10">
         
         {/* HERO SECTION */}

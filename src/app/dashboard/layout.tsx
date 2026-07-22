@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex text-[var(--text-primary)] font-body">
+    <div className="min-h-screen bg-transparent flex text-[var(--text-primary)] font-body">
       {/* Sidebar */}
       <aside className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col fixed inset-y-0 left-0 z-50">
         <div className="p-6 border-b border-[var(--border-color)]">

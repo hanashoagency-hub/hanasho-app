@@ -58,7 +58,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-6 relative">
       <div className="w-full max-w-md relative z-10 pt-10 pb-10">
         <div className="text-center mb-10">
           <Link href="/" className="inline-block mb-6">

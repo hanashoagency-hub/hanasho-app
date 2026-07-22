@@ -8,7 +8,7 @@
 
 @layer base {
   :root {
-    --bg-primary: #071E16;
+    --bg-primary: #05180D;
     --bg-secondary: #103126;
     
     --text-primary: #F2EEE5;
@@ -32,7 +32,6 @@
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    transition: background-color 0.4s ease, color 0.4s ease;
     @apply font-body antialiased overflow-x-hidden;
   }
 }
@@ -42,12 +41,77 @@
     font-family: var(--font-heading);
   }
 
-  .bg-grid-pattern {
-    background-size: 40px 40px;
-    background-image: linear-gradient(to right, rgba(40, 70, 59, 0.2) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(40, 70, 59, 0.2) 1px, transparent 1px);
+  /* ==========================================
+     PREMIUM SITE BACKGROUND SYSTEM
+     ========================================== */
+
+  .site-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    /* Layered backgrounds: vignette + center glow + base gradient */
+    background:
+      /* Vignette — soft darkening at edges */
+      radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(3, 12, 7, 0.55) 100%),
+      /* Center radial glow — subtle illumination */
+      radial-gradient(ellipse at 50% 40%, rgba(16, 49, 38, 0.45) 0%, transparent 65%),
+      /* Base gradient — top to bottom */
+      linear-gradient(180deg, #05180D 0%, #0B2014 100%);
   }
-  
+
+  /* Grid overlay */
+  .site-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(170, 255, 190, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(170, 255, 190, 0.08) 1px, transparent 1px);
+    background-size: 80px 80px;
+    pointer-events: none;
+  }
+
+  /* Noise texture overlay */
+  .site-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC43IiBudW1PY3RhdmVzPSI0IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIxIi8+PC9zdmc+");
+    background-repeat: repeat;
+    background-size: 300px 300px;
+    opacity: 0.025;
+    pointer-events: none;
+  }
+
+  /* Corner dot patterns */
+  .corner-dots {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    background-image: radial-gradient(circle, rgba(177, 230, 51, 0.12) 1.2px, transparent 1.2px);
+    background-size: 24px 24px;
+    pointer-events: none;
+  }
+
+  .corner-dots-tr {
+    top: 0;
+    right: 0;
+    -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 0%, transparent 60%);
+    mask-image: radial-gradient(ellipse at 100% 0%, black 0%, transparent 60%);
+  }
+
+  .corner-dots-bl {
+    bottom: 0;
+    left: 0;
+    -webkit-mask-image: radial-gradient(ellipse at 0% 100%, black 0%, transparent 60%);
+    mask-image: radial-gradient(ellipse at 0% 100%, black 0%, transparent 60%);
+  }
+
+  /* ==========================================
+     DESIGN SYSTEM UTILITIES
+     ========================================== */
+
   .card-shadow {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   }
@@ -55,7 +119,7 @@
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-[20px] px-8 py-4 font-heading font-bold transition-all;
     background-color: var(--brand-primary);
-    color: #071E16;
+    color: #05180D;
   }
   
   .btn-primary:hover {
