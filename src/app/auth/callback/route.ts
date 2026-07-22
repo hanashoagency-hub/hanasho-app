@@ -14,6 +14,9 @@ export async function GET(request: Request) {
     }
   }
 
-  // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/login?error=auth`)
+  // For implicit flow, tokens arrive as URL hash fragments which are
+  // handled client-side. Check if there's a hash-based redirect needed.
+  // If no code was provided, redirect to the callback page that handles
+  // hash fragments client-side.
+  return NextResponse.redirect(`${origin}/auth/callback/handle`)
 }
