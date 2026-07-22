@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,9 +11,9 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  variable: "--font-heading",
 });
 
 export const metadata: Metadata = {
@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="so" dir="ltr">
       <body
-        className={`${inter.variable} ${spaceGrotesk.variable} bg-[#050505] text-[#F5F5F5] antialiased`}
+        className={`${inter.variable} ${manrope.variable} bg-grid-pattern antialiased`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
         <Header />

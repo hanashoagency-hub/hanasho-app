@@ -1,0 +1,160 @@
+"use server";
+
+import { createClient as createServerClient } from "@/utils/supabase/server";
+import { getAdminClient } from "@/utils/certificates";
+import { revalidatePath } from "next/cache";
+
+// Human-readable, verifiable certificate number, e.g. HAN-7F3A9C21
+function generateCertificateNumber() {
+  const rand = Math.random().toString(16).slice(2, 10).toUpperCase();
+  return `HAN-${rand}`;
+}
+
+// Total number of lessons in a course (lessons -> modules -> course).
+async function getCourseLessonCount(
+  admin: ReturnType<typeof getAdminClient>,
+  courseId: string
+) {
+  const { data, error } = await admin
+    .from("lessons")
+    .select("id, modules!inner(course_id)")
+    .eq("modules.course_id", courseId);
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}
+
+type ProgressResult = {
+  success: boolean;
+  error?: string;
+  completedLessonIds?: string[];
+  totalLessons?: number;
+  completedCount?: number;
+  certificate?: { id: string; certificate_number: string } | null;
+};
+
+/**
+ * Toggle completion for a single lesson for the signed-in user.
+ * When the course reaches 100% completion, a certificate is auto-issued.
+ */
+export async function toggleLessonCompleteAction(
+  lessonId: string,
+  courseId: string,
+  completed: boolean
+): Promise<ProgressResult> {
+  try {
+    // Identify the current user from their session cookies.
+    const supabase = await createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Not authenticated." };
+
+    const admin = getAdminClient();
+
+    // Only enrolled students can record progress.
+    const { data: purchase } = await admin
+      .from("purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("course_id", courseId)
+      .maybeSingle();
+    if (!purchase)
+      return { success: false, error: "You must purchase this course first." };
+
+    if (completed) {
+      const { error } = await admin
+        .from("lesson_progress")
+        .upsert(
+          { user_id: user.id, lesson_id: lessonId, course_id: courseId },
+          { onConflict: "user_id,lesson_id" }
+        );
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await admin
+        .from("lesson_progress")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("lesson_id", lessonId);
+      if (error) throw new Error(error.message);
+    }
+
+    // Recompute progress for this course.
+    const { data: progressRows, error: progressError } = await admin
+      .from("lesson_progress")
+      .select("lesson_id")
+      .eq("user_id", user.id)
+      .eq("course_id", courseId);
+    if (progressError) throw new Error(progressError.message);
+
+    const completedLessonIds = (progressRows || []).map((r) => r.lesson_id);
+    const totalLessons = await getCourseLessonCount(admin, courseId);
+    const completedCount = completedLessonIds.length;
+
+    // Issue a certificate if the course is fully complete and none exists yet.
+    let certificate: ProgressResult["certificate"] = null;
+    if (totalLessons > 0 && completedCount >= totalLessons) {
+      certificate = await ensureCertificate(admin, user.id, courseId);
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/my-courses");
+
+    return {
+      success: true,
+      completedLessonIds,
+      totalLessons,
+      completedCount,
+      certificate,
+    };
+  } catch (error: any) {
+    console.error("toggleLessonCompleteAction error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function ensureCertificate(
+  admin: ReturnType<typeof getAdminClient>,
+  userId: string,
+  courseId: string
+) {
+  // Return existing certificate if already issued.
+  const { data: existing } = await admin
+    .from("certificates")
+    .select("id, certificate_number")
+    .eq("user_id", userId)
+    .eq("course_id", courseId)
+    .maybeSingle();
+  if (existing) return existing;
+
+  // Snapshot student name + course title so the certificate is self-contained.
+  const [{ data: profile }, { data: course }] = await Promise.all([
+    admin.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+    admin.from("courses").select("title").eq("id", courseId).maybeSingle(),
+  ]);
+
+  const { data: created, error } = await admin
+    .from("certificates")
+    .insert({
+      certificate_number: generateCertificateNumber(),
+      user_id: userId,
+      course_id: courseId,
+      student_name: profile?.full_name || "Student",
+      course_title: course?.title || "Course",
+    })
+    .select("id, certificate_number")
+    .single();
+
+  // On a rare unique-constraint race, fetch the row that won.
+  if (error) {
+    const { data: winner } = await admin
+      .from("certificates")
+      .select("id, certificate_number")
+      .eq("user_id", userId)
+      .eq("course_id", courseId)
+      .maybeSingle();
+    if (winner) return winner;
+    throw new Error(error.message);
+  }
+
+  return created;
+}

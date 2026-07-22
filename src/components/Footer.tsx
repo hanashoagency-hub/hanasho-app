@@ -8,7 +8,7 @@ export default function Footer() {
   if (pathname?.startsWith("/dashboard")) return null;
 
   return (
-    <footer style={{ borderColor: 'var(--silver-border)', backgroundColor: 'var(--bg-primary)' }} className="border-t group">
+    <footer className="border-t border-[var(--border-color)] bg-[var(--bg-primary)] mt-auto">
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-12 md:grid-cols-4">
           {/* Brand */}
@@ -17,15 +17,10 @@ export default function Footer() {
               <img
                 src="/assets/hanasho-dark-logo.png"
                 alt="Hanasho"
-                className="h-16 md:h-20 w-auto object-contain block group-[[data-theme='grey']_&]:hidden"
-              />
-              <img
-                src="/assets/hanasho-grey-logo.png"
-                alt="Hanasho"
-                className="h-16 md:h-20 w-auto object-contain hidden group-[[data-theme='grey']_&]:block"
+                className="h-16 md:h-20 w-auto object-contain"
               />
             </Link>
-            <p className="text-sm text-white/50 leading-relaxed">
+            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               Akademiyada ugu horeysa ee Soomaaliyeed oo ku barta dhallinyarada
               xirfadaha digital-ka iyo dakhliga online.
             </p>
@@ -33,7 +28,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-heading font-semibold text-white mb-4 text-sm uppercase tracking-widest">
+            <h4 className="font-heading font-bold text-[var(--text-primary)] mb-4 text-sm uppercase tracking-widest">
               Xiriiriyayaal
             </h4>
             <ul className="space-y-3">
@@ -48,7 +43,7 @@ export default function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/50 transition-colors hover:text-white"
+                    className="text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--brand-primary)]"
                   >
                     {link.label}
                   </Link>
@@ -59,7 +54,7 @@ export default function Footer() {
 
           {/* Courses */}
           <div>
-            <h4 className="font-heading font-semibold text-white mb-4 text-sm uppercase tracking-widest">
+            <h4 className="font-heading font-bold text-[var(--text-primary)] mb-4 text-sm uppercase tracking-widest">
               Koorsooyinka
             </h4>
             <ul className="space-y-3">
@@ -73,7 +68,7 @@ export default function Footer() {
                 <li key={course}>
                   <Link
                     href="/courses"
-                    className="text-sm text-white/50 transition-colors hover:text-white"
+                    className="text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--brand-primary)]"
                   >
                     {course}
                   </Link>
@@ -84,10 +79,10 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-heading font-semibold text-white mb-4 text-sm uppercase tracking-widest">
+            <h4 className="font-heading font-bold text-[var(--text-primary)] mb-4 text-sm uppercase tracking-widest">
               Nala Soo Xiriir
             </h4>
-            <ul className="space-y-3 text-sm text-white/50">
+            <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
               <li>📧 info@hanasho.io</li>
               <li>📱 WhatsApp Support</li>
               <li>📍 Mogadishu, Somalia</li>
@@ -96,8 +91,8 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 md:flex-row">
-          <p className="text-xs text-white/30">
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-[var(--border-color)] pt-8 md:flex-row">
+          <p className="text-xs text-[var(--text-secondary)]">
             © {new Date().getFullYear()} hanasho.io. Xuquuqda oo dhan way ilaalisan yihiin.
           </p>
           <div className="flex gap-6">
@@ -105,7 +100,7 @@ export default function Footer() {
               <a
                 key={social}
                 href="#"
-                className="text-xs text-white/30 transition-colors hover:text-white"
+                className="text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--brand-primary)]"
               >
                 {social}
               </a>

@@ -58,41 +58,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background gradients */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/[0.03] blur-[150px] rounded-full mix-blend-screen pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-white/[0.03] blur-[150px] rounded-full mix-blend-screen pointer-events-none" />
-
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6 relative">
       <div className="w-full max-w-md relative z-10 pt-10 pb-10">
         <div className="text-center mb-10">
           <Link href="/" className="inline-block mb-6">
             <img src="/assets/hanasho-dark-logo.png" alt="Hanasho" className="h-10 w-auto object-contain mx-auto" />
           </Link>
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Enter your credentials to access your account.</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 font-heading">Welcome Back</h1>
+          <p className="text-[var(--text-secondary)]">Enter your credentials to access your account.</p>
         </div>
 
-        <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-
+        <div className="premium-card">
           {error && (
-            <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+            <div className="mb-6 p-3 rounded-[12px] bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
               {error}
             </div>
           )}
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
+              <label className="text-sm font-bold text-[var(--text-primary)] ml-1">Email Address</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-500" />
+                  <Mail className="h-5 w-5 text-[var(--text-secondary)]" />
                 </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-all"
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-[16px] py-3 pl-11 pr-4 text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all"
                   placeholder="name@example.com"
                   required
                   disabled={loading}
@@ -102,18 +96,18 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between ml-1">
-                <label className="text-sm font-medium text-gray-300">Password</label>
-                <a href="#" className="text-xs text-[#D9D9D9] hover:text-white transition-colors">Forgot password?</a>
+                <label className="text-sm font-bold text-[var(--text-primary)]">Password</label>
+                <a href="#" className="text-xs text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors">Forgot password?</a>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-500" />
+                  <Lock className="h-5 w-5 text-[var(--text-secondary)]" />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-all"
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-[16px] py-3 pl-11 pr-4 text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all"
                   placeholder="••••••••"
                   required
                   disabled={loading}
@@ -124,19 +118,19 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-[#D9D9D9] to-[#F5F5F5] hover:from-white hover:to-[#F5F5F5] text-black font-medium py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-white/10 mt-2 disabled:opacity-50"
+              className="btn-primary w-full mt-4"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Sign In <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></>}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : <>Sign In <ArrowRight className="w-5 h-5 transition-transform" /></>}
             </button>
           </form>
 
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
+                <div className="w-full border-t border-[var(--border-color)]"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-transparent backdrop-blur-md text-gray-500">Or continue with</span>
+                <span className="px-2 bg-[var(--bg-secondary)] text-[var(--text-secondary)]">Or continue with</span>
               </div>
             </div>
 
@@ -144,7 +138,7 @@ export default function LoginPage() {
               <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 py-3 px-4 rounded-xl text-sm font-medium text-white transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-3 bg-[var(--bg-primary)] hover:border-[var(--brand-primary)] border border-[var(--border-color)] py-3 px-4 rounded-[16px] text-sm font-bold text-[var(--text-primary)] transition-colors disabled:opacity-50"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -158,9 +152,9 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center mt-8 text-gray-400">
+        <p className="text-center mt-8 text-[var(--text-secondary)]">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-[#D9D9D9] hover:text-white font-medium transition-colors">
+          <Link href="/register" className="text-[var(--brand-primary)] hover:text-[var(--brand-hover)] font-bold transition-colors">
             Sign Up
           </Link>
         </p>

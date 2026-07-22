@@ -5,37 +5,37 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Account Settings</h1>
-        <p className="text-white/50">Manage your profile and preferences.</p>
+        <h1 className="font-heading text-3xl font-bold text-[var(--text-primary)] mb-2">Account Settings</h1>
+        <p className="text-[var(--text-secondary)]">Manage your profile and preferences.</p>
       </div>
 
       <div className="space-y-6">
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6">
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[20px] p-6">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-blue-400" />
+            <div className="w-12 h-12 rounded-[12px] bg-[var(--bg-primary)] border border-[var(--border-color)] flex items-center justify-center">
+              <Shield className="w-6 h-6 text-[var(--brand-primary)]" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Security & Password</h2>
-              <p className="text-sm text-white/50">Update your password and secure your account.</p>
+              <h2 className="font-heading text-lg font-bold text-[var(--text-primary)]">Security & Password</h2>
+              <p className="text-sm text-[var(--text-secondary)]">Update your password and secure your account.</p>
             </div>
           </div>
-          <button className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white text-sm font-medium rounded-lg transition-colors">
+          <button className="btn-secondary px-6 py-2 text-sm">
             Change Password
           </button>
         </div>
 
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6">
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[20px] p-6">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-purple-400" />
+            <div className="w-12 h-12 rounded-[12px] bg-[var(--bg-primary)] border border-[var(--border-color)] flex items-center justify-center">
+              <Bell className="w-6 h-6 text-[var(--brand-primary)]" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Notifications</h2>
-              <p className="text-sm text-white/50">Manage email notifications and alerts.</p>
+              <h2 className="font-heading text-lg font-bold text-[var(--text-primary)]">Notifications</h2>
+              <p className="text-sm text-[var(--text-secondary)]">Manage email notifications and alerts.</p>
             </div>
           </div>
-          <button className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white text-sm font-medium rounded-lg transition-colors">
+          <button className="btn-secondary px-6 py-2 text-sm">
             Manage Preferences
           </button>
         </div>

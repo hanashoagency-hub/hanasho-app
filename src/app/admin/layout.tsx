@@ -50,26 +50,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--text-secondary)]" />
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
-        <div className="text-center bg-[#0A0A0A] border border-red-500/20 rounded-3xl p-10 max-w-md w-full">
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6">
+        <div className="text-center bg-[var(--bg-secondary)] border border-red-500/20 rounded-[24px] p-10 max-w-md w-full">
           <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <ShieldAlert className="w-10 h-10 text-red-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
-          <p className="text-white/60 mb-8">You do not have admin privileges to access this page.</p>
+          <h2 className="font-heading text-2xl font-bold text-[var(--text-primary)] mb-2">Access Denied</h2>
+          <p className="text-[var(--text-secondary)] mb-8">You do not have admin privileges to access this page.</p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-white font-medium transition-all"
+            className="btn-secondary"
           >
-            <ArrowLeft className="w-4 h-4" /> Go to Dashboard
+            <ArrowLeft className="w-4 h-4 mr-2" /> Go to Dashboard
           </Link>
         </div>
       </div>
@@ -77,10 +77,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const navItems = [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard, color: "text-blue-400" },
-    { href: "/admin/courses", label: "Courses & Modules", icon: BookOpen, color: "text-purple-400" },
-    { href: "/admin/users", label: "Students & Users", icon: Users, color: "text-green-400" },
-    { href: "/admin/transactions", label: "WaafiPay Transactions", icon: CreditCard, color: "text-orange-400" },
+    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/courses", label: "Courses & Modules", icon: BookOpen },
+    { href: "/admin/users", label: "Students & Users", icon: Users },
+    { href: "/admin/transactions", label: "WaafiPay Transactions", icon: CreditCard },
   ];
 
   const handleSignOut = async () => {
@@ -90,15 +90,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex text-white font-sans">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex text-[var(--text-primary)] font-body">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0A0A0A] border-r border-white/10 flex flex-col fixed inset-y-0 left-0 z-50">
-        <div className="p-6 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-2 mb-2 text-white/50 hover:text-white transition-colors text-sm font-medium">
+      <aside className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col fixed inset-y-0 left-0 z-50">
+        <div className="p-6 border-b border-[var(--border-color)]">
+          <Link href="/" className="flex items-center gap-2 mb-2 text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors text-sm font-bold">
             <ArrowLeft className="w-4 h-4" /> Back to Website
           </Link>
-          <h2 className="text-xl font-heading font-bold text-white tracking-wider">
-            HANASHO <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">ADMIN</span>
+          <h2 className="text-xl font-heading font-bold text-[var(--text-primary)] tracking-wider mt-4">
+            HANASHO <span className="text-[var(--brand-primary)]">ADMIN</span>
           </h2>
         </div>
 
@@ -109,23 +109,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-[12px] font-bold text-sm transition-colors ${
                   isActive
-                    ? "bg-white/5 text-white"
-                    : "text-white/70 hover:bg-white/5 hover:text-white"
+                    ? "bg-[var(--bg-primary)] text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)]"
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${item.color}`} />
+                <item.icon className={`w-5 h-5 ${isActive ? 'text-[var(--brand-primary)]' : 'text-[var(--text-secondary)]'}`} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-[var(--border-color)]">
           <button
             onClick={handleSignOut}
-            className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors font-medium"
+            className="flex items-center w-full gap-3 px-4 py-3 rounded-[12px] text-red-400 hover:bg-red-500/10 transition-colors font-bold text-sm"
           >
             <LogOut className="w-5 h-5" />
             Sign Out

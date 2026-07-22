@@ -16,47 +16,47 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
   return (
-    <div className="min-h-screen bg-[#050505] flex text-white font-sans">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex text-[var(--text-primary)] font-body">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0A0A0A] border-r border-white/10 flex flex-col fixed inset-y-0 left-0 z-50">
-        <div className="p-6 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-2 mb-6 text-white/50 hover:text-white transition-colors text-sm font-medium">
+      <aside className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col fixed inset-y-0 left-0 z-50">
+        <div className="p-6 border-b border-[var(--border-color)]">
+          <Link href="/" className="flex items-center gap-2 mb-6 text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors text-sm font-bold">
             <ArrowLeft className="w-4 h-4" /> Back to Website
           </Link>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[#071E16] font-bold text-lg shadow-sm">
               {(profile?.full_name || user.email || "?")[0].toUpperCase()}
             </div>
             <div className="overflow-hidden">
-              <h2 className="text-white font-semibold truncate">{profile?.full_name || "Student"}</h2>
-              <p className="text-white/40 text-xs truncate">{user.email}</p>
+              <h2 className="text-[var(--text-primary)] font-bold truncate font-heading">{profile?.full_name || "Student"}</h2>
+              <p className="text-[var(--text-secondary)] text-xs truncate">{user.email}</p>
             </div>
           </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 text-white font-medium hover:bg-white/10 transition-colors">
-            <User className="w-5 h-5 text-blue-400" />
+          <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm">
+            <User className="w-5 h-5 text-[var(--brand-primary)]" />
             My Profile
           </Link>
-          <Link href="/dashboard/my-courses" className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-white transition-colors font-medium">
-            <BookOpen className="w-5 h-5 text-purple-400" />
+          <Link href="/dashboard/my-courses" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm">
+            <BookOpen className="w-5 h-5 text-[var(--brand-primary)]" />
             My Courses
           </Link>
-          <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-white transition-colors font-medium">
-            <Settings className="w-5 h-5 text-gray-400" />
+          <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm">
+            <Settings className="w-5 h-5 text-[var(--text-secondary)]" />
             Settings
           </Link>
           {profile?.role === 'admin' && (
-            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-white/5 transition-colors font-medium mt-4 border border-red-500/20 bg-red-500/5">
+            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-red-400 hover:bg-red-500/10 transition-colors font-bold mt-4 border border-red-500/20 bg-red-500/5 text-sm">
               Admin Panel
             </Link>
           )}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-[var(--border-color)]">
           <form action="/auth/signout" method="post">
-            <button className="flex items-center w-full gap-3 px-4 py-3 rounded-xl text-white/50 hover:bg-white/5 hover:text-white transition-colors font-medium">
+            <button className="flex items-center w-full gap-3 px-4 py-3 rounded-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm">
               <LogOut className="w-5 h-5" />
               Sign Out
             </button>
