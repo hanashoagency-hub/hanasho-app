@@ -34,9 +34,10 @@ export default function CoursesCatalogPage() {
   return (
     <div className="min-h-screen bg-transparent pb-24 relative overflow-hidden">
       {/* Header */}
-      <div className="relative pt-32 pb-16 px-6 overflow-hidden bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
-        <div className="max-w-7xl mx-auto relative z-10 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-[var(--text-primary)] font-heading">
+      <div className="relative pt-32 pb-16 px-6">
+        <div className="max-w-7xl mx-auto text-center relative z-10">
+          <h1 className="text-4xl md:text-6xl font-bold font-heading text-[var(--text-primary)] mb-6 flex justify-center items-center gap-4">
+            <BookOpen className="w-8 h-8 md:w-12 md:h-12 text-[var(--brand-primary)]" />
             Explore Our Premium Catalog
           </h1>
           <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
@@ -62,7 +63,7 @@ export default function CoursesCatalogPage() {
             {courses.map((course) => (
               <div 
                 key={course.id}
-                className="flex flex-col rounded-[20px] bg-[var(--bg-secondary)] border border-[var(--border-color)] overflow-hidden hover:border-[var(--brand-primary)] transition-all duration-300 group card-shadow"
+                className="premium-card !p-0 flex flex-col overflow-hidden group"
               >
                 {/* Image */}
                 <div className="h-52 relative overflow-hidden bg-[var(--bg-primary)] flex items-center justify-center border-b border-[var(--border-color)]">
