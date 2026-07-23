@@ -98,7 +98,7 @@ export default function AdminCoursesPage() {
         } else if (result.courseId) {
           setShowModal(false);
           fetchCourses();
-          window.location.href = `/admin/courses/${result.courseId}`;
+          window.location.href = `/portal-live/courses/${result.courseId}`;
         }
       }
     } catch (err: any) {
@@ -183,7 +183,7 @@ export default function AdminCoursesPage() {
                 <p className="text-white/50 text-xs">{course.currency}</p>
               </div>
               <div className="flex items-center gap-2">
-                <Link href={`/admin/courses/${course.id}`} className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors" title="Manage Modules & Lessons">
+                <Link href={`/portal-live/courses/${course.id}`} className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors" title="Manage Modules & Lessons">
                   <BookOpen className="w-4 h-4" />
                 </Link>
                 <button onClick={() => togglePublish(course)} className="p-2 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 transition-colors" title={course.is_published ? "Unpublish" : "Publish"}>
@@ -310,7 +310,7 @@ export default function AdminCoursesPage() {
                   <BookOpen className="w-12 h-12 text-white/20 mb-4" />
                   <h3 className="text-lg font-semibold text-white mb-2">Curriculum Builder</h3>
                   <p className="text-white/50 text-sm mb-6">To manage lessons and modules for an existing course, please use the Curriculum Builder.</p>
-                  <Link href={`/admin/courses/${editingCourse.id}`} className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2">
+                  <Link href={`/portal-live/courses/${editingCourse.id}`} className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2">
                     Open Curriculum Builder <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>

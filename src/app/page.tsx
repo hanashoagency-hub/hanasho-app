@@ -19,9 +19,9 @@ export default function Home() {
       {/* ================= HERO SECTION ================= */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 flex flex-col items-center justify-center text-center">
         <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tight text-[var(--text-primary)] max-w-5xl leading-tight text-center mx-auto mb-6 relative z-10">
-          Baro xirfadaha<br />
-          <span className="text-[var(--brand-primary)]">
-            mustaqbalka.
+          <span className="hero-reveal-line block">HANKAAGA HALKA</span>
+          <span className="hero-reveal-line hero-reveal-line-2 block text-[var(--brand-primary)]">
+            UU KA BILOWDO
           </span>
         </h1>
 
@@ -224,9 +224,9 @@ export default function Home() {
                 </div>
                 <div className="flex gap-3 flex-row-reverse">
                   <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex-shrink-0 flex items-center justify-center">
-                    <span className="text-xs font-bold text-[#071E16]">X</span>
+                    <span className="text-xs font-bold text-[var(--on-brand)]">X</span>
                   </div>
-                  <div className="bg-[var(--brand-primary)] rounded-2xl p-4 text-sm text-[#071E16] rounded-tr-none">
+                  <div className="bg-[var(--brand-primary)] rounded-2xl p-4 text-sm text-[var(--on-brand)] rounded-tr-none">
                     Tilaabada ugu horreysa waa inaad fahanto aasaaska. Waxaad ka bilaabi kartaa koorsadeena "AI Automations" oo ku tusi doonta sida qalabka AI loogu isticmaalo nolol maalmeedkaaga...
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export default function Home() {
                   <span className="text-[var(--text-secondary)] text-sm">Ku qor su'aashaada...</span>
                 </div>
                 <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4 text-[#071E16]" />
+                  <MessageSquare className="w-4 h-4 text-[var(--on-brand)]" />
                 </div>
               </div>
             </div>
@@ -357,13 +357,13 @@ export default function Home() {
               Founder & CEO
             </span>
             <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-5xl mb-4">
-              Mohamed Aweis Mohamed
+              BUZURI
             </h2>
             <p className="text-xl text-[var(--text-secondary)] font-medium mb-6">
               Known as <span className="text-[var(--text-primary)] font-bold">Eng Buzuri</span> (sometimes Ryder)
             </p>
             <p className="text-[var(--text-secondary)] leading-relaxed text-lg mb-8 max-w-xl mx-auto md:mx-0">
-              The founder of hanasho.io. He is a Software Engineer, AI & Technology Expert dedicated to empowering Somali youth with cutting-edge technology and innovation.
+              The founder of Hanhub.so. He is a Software Engineer, AI & Technology Expert dedicated to empowering Somali youth with cutting-edge technology and innovation.
             </p>
             <div className="flex justify-center md:justify-start gap-4">
               <Link href="https://buzuri.com" target="_blank" className="btn-secondary">

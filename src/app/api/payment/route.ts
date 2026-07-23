@@ -57,7 +57,7 @@ export async function POST(request: Request) {
           invoiceId: referenceId,
           amount: amount.toString(),
           currency,
-          description: "Hanasho LMS Course Purchase"
+          description: "HanHub LMS Course Purchase"
         }
       }
     };

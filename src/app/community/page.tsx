@@ -157,7 +157,7 @@ export default function CommunityPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="text-[var(--text-primary)] font-bold font-heading">{post.author}</h3>
                         {post.role === 'Pro Learner' && (
-                          <span className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-[#05180D] bg-[var(--brand-primary)] rounded-[6px]">
+                          <span className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-[var(--on-brand)] bg-[var(--brand-primary)] rounded-[6px]">
                             <Award className="w-3 h-3 inline mr-1" /> Pro
                           </span>
                         )}

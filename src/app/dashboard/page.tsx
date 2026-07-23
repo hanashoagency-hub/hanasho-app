@@ -123,7 +123,7 @@ export default async function DashboardPage() {
                     </div>
                   )}
                   {certId && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[var(--brand-primary)] text-[#071E16] text-xs font-bold">
+                    <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[var(--brand-primary)] text-[var(--on-brand)] text-xs font-bold">
                       <Award className="w-3.5 h-3.5" /> Certified
                     </div>
                   )}

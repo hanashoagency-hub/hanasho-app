@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
-// Service-role client (bypasses RLS) — mirrors src/app/admin/actions.ts.
+// Service-role client (bypasses RLS) — mirrors src/app/portal-live/actions.ts.
 // Plain module (NOT "use server") so it can be imported by server components
 // and server actions alike.
 export function getAdminClient() {

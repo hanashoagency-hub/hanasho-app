@@ -195,7 +195,7 @@ export default function CoursePage() {
               {certificate && (
                 <Link
                   href={`/certificate/${certificate.id}`}
-                  className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-[12px] bg-[var(--brand-primary)] text-[#071E16] text-sm font-bold hover:bg-[var(--brand-hover)] transition-all"
+                  className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-[12px] bg-[var(--brand-primary)] text-[var(--on-brand)] text-sm font-bold hover:bg-[var(--brand-hover)] transition-all"
                 >
                   <Award className="w-4 h-4" /> View Certificate
                 </Link>
@@ -278,7 +278,7 @@ export default function CoursePage() {
             <div className="mb-6 md:mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 p-5 md:p-6 rounded-[20px] border border-[var(--brand-primary)] bg-[var(--bg-secondary)]">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0">
-                  <Award className="w-6 h-6 text-[#071E16]" />
+                  <Award className="w-6 h-6 text-[var(--on-brand)]" />
                 </div>
                 <div>
                   <h3 className="font-bold text-[var(--text-primary)] font-heading">Course Completed! 🎉</h3>
@@ -337,7 +337,7 @@ export default function CoursePage() {
                     disabled={!currentLessonId || savingProgress}
                     className={`flex items-center px-6 py-3 rounded-[20px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                       currentLessonDone
-                        ? "bg-[var(--brand-primary)] text-[#071E16]"
+                        ? "bg-[var(--brand-primary)] text-[var(--on-brand)]"
                         : "btn-secondary text-[var(--text-primary)] border-[var(--border-color)]"
                     }`}
                   >

@@ -83,7 +83,7 @@ export default function MarketplacePage() {
                   onClick={() => setActiveCategory(cat)}
                   className={`px-6 py-2.5 rounded-[12px] text-sm font-bold transition-all duration-300 border ${
                     activeCategory === cat 
-                      ? 'bg-[var(--brand-primary)] text-[#05180D] border-transparent' 
+                      ? 'bg-[var(--brand-primary)] text-[var(--on-brand)] border-transparent'
                       : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--brand-primary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
@@ -137,7 +137,7 @@ export default function MarketplacePage() {
                     <div className="text-2xl font-bold font-heading text-[var(--text-primary)]">
                       {product.price === 0 ? 'Free' : `$${product.price}`}
                     </div>
-                    <button className="p-3 rounded-[12px] bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--brand-primary)] text-[var(--brand-primary)] transition-colors group-hover:bg-[var(--brand-primary)] group-hover:text-[#05180D]">
+                    <button className="p-3 rounded-[12px] bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--brand-primary)] text-[var(--brand-primary)] transition-colors group-hover:bg-[var(--brand-primary)] group-hover:text-[var(--on-brand)]">
                       <Download className="w-5 h-5" />
                     </button>
                   </div>

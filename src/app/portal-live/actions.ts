@@ -55,7 +55,7 @@ export async function createCourseAction(courseData: any, lessons: any[]) {
       }
     }
 
-    revalidatePath("/admin/courses");
+    revalidatePath("/portal-live/courses");
     revalidatePath("/courses");
     
     return { success: true, courseId: course.id };
@@ -75,7 +75,7 @@ export async function updateCourseAction(id: string, courseData: any) {
 
     if (error) throw new Error(error.message);
 
-    revalidatePath("/admin/courses");
+    revalidatePath("/portal-live/courses");
     revalidatePath("/courses");
     
     return { success: true };
@@ -95,7 +95,7 @@ export async function deleteCourseAction(id: string) {
 
     if (error) throw new Error(error.message);
 
-    revalidatePath("/admin/courses");
+    revalidatePath("/portal-live/courses");
     revalidatePath("/courses");
     
     return { success: true };
@@ -115,7 +115,7 @@ export async function togglePublishAction(id: string, is_published: boolean) {
 
     if (error) throw new Error(error.message);
 
-    revalidatePath("/admin/courses");
+    revalidatePath("/portal-live/courses");
     revalidatePath("/courses");
     
     return { success: true };
@@ -136,8 +136,8 @@ export async function createModuleAction(courseId: string, title: string, sortOr
 
     if (error) throw new Error(error.message);
 
-    revalidatePath("/admin/courses");
-    revalidatePath(`/admin/courses/${courseId}`);
+    revalidatePath("/portal-live/courses");
+    revalidatePath(`/portal-live/courses/${courseId}`);
     return { success: true, data };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -150,8 +150,8 @@ export async function deleteModuleAction(id: string, courseId: string) {
     const { error } = await supabaseAdmin.from("modules").delete().eq("id", id);
     if (error) throw new Error(error.message);
 
-    revalidatePath("/admin/courses");
-    revalidatePath(`/admin/courses/${courseId}`);
+    revalidatePath("/portal-live/courses");
+    revalidatePath(`/portal-live/courses/${courseId}`);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -167,8 +167,8 @@ export async function createLessonAction(moduleId: string, lessonData: any, cour
     });
     if (error) throw new Error(error.message);
 
-    revalidatePath("/admin/courses");
-    revalidatePath(`/admin/courses/${courseId}`);
+    revalidatePath("/portal-live/courses");
+    revalidatePath(`/portal-live/courses/${courseId}`);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -181,8 +181,8 @@ export async function deleteLessonAction(id: string, courseId: string) {
     const { error } = await supabaseAdmin.from("lessons").delete().eq("id", id);
     if (error) throw new Error(error.message);
 
-    revalidatePath("/admin/courses");
-    revalidatePath(`/admin/courses/${courseId}`);
+    revalidatePath("/portal-live/courses");
+    revalidatePath(`/portal-live/courses/${courseId}`);
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

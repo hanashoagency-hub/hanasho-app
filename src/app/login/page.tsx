@@ -62,7 +62,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10 pt-10 pb-10">
         <div className="text-center mb-10">
           <Link href="/" className="inline-block mb-6">
-            <img src="/assets/hanasho-dark-logo.png" alt="Hanasho" className="h-10 w-auto object-contain mx-auto" />
+            <img src="/assets/logo.png" alt="HanHub" className="h-10 w-auto object-contain mx-auto" />
           </Link>
           <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 font-heading">Welcome Back</h1>
           <p className="text-[var(--text-secondary)]">Enter your credentials to access your account.</p>

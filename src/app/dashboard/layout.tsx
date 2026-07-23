@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BookOpen, User, Settings, LogOut, ArrowLeft } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import DashboardThemeToggle from "@/components/DashboardThemeToggle";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -20,11 +21,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Sidebar */}
       <aside className="w-64 bg-[var(--bg-secondary)] border-r border-[var(--border-color)] flex flex-col fixed inset-y-0 left-0 z-50">
         <div className="p-6 border-b border-[var(--border-color)]">
-          <Link href="/" className="flex items-center gap-2 mb-6 text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors text-sm font-bold">
-            <ArrowLeft className="w-4 h-4" /> Back to Website
-          </Link>
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/" className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors text-sm font-bold">
+              <ArrowLeft className="w-4 h-4" /> Back to Website
+            </Link>
+            <DashboardThemeToggle />
+          </div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[#071E16] font-bold text-lg shadow-sm">
+            <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[var(--on-brand)] font-bold text-lg shadow-sm">
               {(profile?.full_name || user.email || "?")[0].toUpperCase()}
             </div>
             <div className="overflow-hidden">
@@ -48,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             Settings
           </Link>
           {profile?.role === 'admin' && (
-            <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-red-400 hover:bg-red-500/10 transition-colors font-bold mt-4 border border-red-500/20 bg-red-500/5 text-sm">
+            <Link href="/portal-live" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-red-400 hover:bg-red-500/10 transition-colors font-bold mt-4 border border-red-500/20 bg-red-500/5 text-sm">
               Admin Panel
             </Link>
           )}

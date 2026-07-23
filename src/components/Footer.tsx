@@ -15,8 +15,8 @@ export default function Footer() {
           <div className="md:col-span-1">
             <Link href="/" className="flex items-center mb-6">
               <img
-                src="/assets/hanasho-dark-logo.png"
-                alt="Hanasho"
+                src="/assets/logo.png"
+                alt="HanHub"
                 className="h-16 md:h-20 w-auto object-contain"
               />
             </Link>
@@ -83,7 +83,7 @@ export default function Footer() {
               Nala Soo Xiriir
             </h4>
             <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
-              <li>📧 info@hanasho.io</li>
+              <li>📧 info@hanhub.so</li>
               <li>📱 WhatsApp Support</li>
               <li>📍 Mogadishu, Somalia</li>
             </ul>
@@ -93,7 +93,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-[var(--border-color)] pt-8 md:flex-row">
           <p className="text-xs text-[var(--text-secondary)]">
-            © {new Date().getFullYear()} hanasho.io. Xuquuqda oo dhan way ilaalisan yihiin.
+            © {new Date().getFullYear()} Hanhub.so. Xuquuqda oo dhan way ilaalisan yihiin.
           </p>
           <div className="flex gap-6">
             {["Twitter", "Instagram", "YouTube", "TikTok"].map((social) => (

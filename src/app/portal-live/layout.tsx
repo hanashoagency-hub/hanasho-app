@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, Users, CreditCard, LogOut, ArrowLeft, ShieldAlert, Loader2 } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, CreditCard, LogOut, ArrowLeft, ShieldAlert, Loader2, FileText } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -77,10 +77,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const navItems = [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/courses", label: "Courses & Modules", icon: BookOpen },
-    { href: "/admin/users", label: "Students & Users", icon: Users },
-    { href: "/admin/transactions", label: "WaafiPay Transactions", icon: CreditCard },
+    { href: "/portal-live", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/portal-live/courses", label: "Courses & Modules", icon: BookOpen },
+    { href: "/portal-live/blogs", label: "Blogs & Articles", icon: FileText },
+    { href: "/portal-live/users", label: "Students & Users", icon: Users },
+    { href: "/portal-live/transactions", label: "WaafiPay Transactions", icon: CreditCard },
   ];
 
   const handleSignOut = async () => {
@@ -104,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <nav className="flex-1 p-4 space-y-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
+            const isActive = pathname === item.href || (item.href !== "/portal-live" && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.href}

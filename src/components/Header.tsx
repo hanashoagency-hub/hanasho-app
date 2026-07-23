@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -87,6 +89,7 @@ export default function Header() {
     { href: "/#about", label: "Annaga" },
     { href: "/services", label: "Services" },
     { href: "/courses", label: "Courses" },
+    { href: "/blogs", label: "Blog" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/community", label: "Community" },
   ];
@@ -104,7 +107,7 @@ export default function Header() {
     window.location.reload();
   };
 
-  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/portal-live")) return null;
 
   return (
     <>
@@ -118,8 +121,8 @@ export default function Header() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center group">
             <img
-              src="/assets/hanasho-dark-logo.png"
-              alt="Hanasho"
+              src="/assets/logo.png"
+              alt="HanHub"
               className="h-16 md:h-20 w-auto object-contain transition-all duration-300 group-hover:scale-105"
             />
           </Link>
@@ -165,9 +168,21 @@ export default function Header() {
               )}
             </div>
 
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="w-10 h-10 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center justify-center hover:bg-[var(--border-color)] transition-all duration-300"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-[var(--text-secondary)]" />
+              ) : (
+                <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+              )}
+            </button>
+
             <Link href="/checkout" className="relative w-10 h-10 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center justify-center hover:bg-[var(--border-color)] transition-all duration-300">
               <ShoppingCart className="w-4 h-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-primary)] text-[10px] font-bold text-[#071E16]">
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-primary)] text-[10px] font-bold text-[var(--on-brand)]">
                 0
               </span>
             </Link>
@@ -179,7 +194,7 @@ export default function Header() {
                   className="flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] pl-3 pr-4 py-2 hover:bg-[var(--border-color)] transition-colors"
                 >
                   <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-[#071E16]" />
+                    <User className="w-3.5 h-3.5 text-[var(--on-brand)]" />
                   </div>
                   <span className="text-sm font-medium text-[var(--text-primary)]">Account</span>
                   <ChevronDown className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
@@ -217,7 +232,7 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/register"
-                  className="rounded-[16px] bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-heading font-bold text-[#071E16] transition-transform hover:-translate-y-0.5"
+                  className="rounded-[16px] bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-heading font-bold text-[var(--on-brand)] transition-transform hover:-translate-y-0.5"
                 >
                   Sign Up
                 </Link>
@@ -225,14 +240,27 @@ export default function Header() {
             )}
           </div>
 
-          {/* Mobile Hamburger */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="flex md:hidden text-[var(--text-primary)]"
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
-          </button>
+          {/* Mobile Controls */}
+          <div className="flex items-center gap-3 md:hidden">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="w-9 h-9 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center justify-center"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-[var(--text-secondary)]" />
+              ) : (
+                <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+              )}
+            </button>
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="flex text-[var(--text-primary)]"
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -281,7 +309,7 @@ export default function Header() {
             <Link
               href="/register"
               onClick={() => setMobileOpen(false)}
-              className="mt-4 rounded-[16px] bg-[var(--brand-primary)] px-8 py-3 font-heading font-bold text-[#071E16]"
+              className="mt-4 rounded-[16px] bg-[var(--brand-primary)] px-8 py-3 font-heading font-bold text-[var(--on-brand)]"
             >
               Sign Up
             </Link>

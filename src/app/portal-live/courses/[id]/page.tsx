@@ -122,7 +122,7 @@ export default function CourseBuilderPage() {
   return (
     <div>
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/admin/courses" className="p-2 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors">
+        <Link href="/portal-live/courses" className="p-2 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
