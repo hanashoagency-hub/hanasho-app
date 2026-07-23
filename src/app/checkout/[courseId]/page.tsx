@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, Loader2, ArrowLeft, CheckCircle, CreditCard, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { getCheckoutItemAction } from "@/app/portal-live/actions";
+import StripeCardCheckout from "@/components/StripeCardCheckout";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -145,62 +146,77 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <form onSubmit={handlePayment} className="space-y-6">
+            <div className="space-y-6">
               <div className="space-y-3">
                 <label className="text-sm font-medium text-gray-300">Select Payment Method</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {['evc', 'zaad', 'sahal', 'somnet'].map(method => (
+                  {[...['evc', 'zaad', 'sahal', 'somnet'], ...(itemType === 'course' ? ['card'] : [])].map(method => (
                     <button
                       key={method}
                       type="button"
-                      onClick={() => setPaymentMethod(method)}
+                      onClick={() => { setPaymentMethod(method); setError(""); }}
                       className={`py-3 rounded-xl border text-sm font-bold uppercase tracking-wider transition-all ${
-                        paymentMethod === method 
-                          ? "bg-white/10 border-white text-white" 
+                        paymentMethod === method
+                          ? "bg-white/10 border-white text-white"
                           : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
                       }`}
                     >
-                      {method}
+                      {method === 'card' ? 'Mastercard/Visa' : method}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Phone Number (Ka reeb 252)</label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-0 inset-y-0 flex items-center pl-4 pr-3 border-r border-white/10 text-white/50 bg-white/5 rounded-l-xl">
-                    +252
+              {paymentMethod === 'card' ? (
+                <StripeCardCheckout
+                  courseId={itemId}
+                  amount={Number(item.price)}
+                  onSuccess={(msg) => {
+                    setSuccess(true);
+                    setTimeout(() => router.push('/dashboard'), 3000);
+                  }}
+                  onError={(msg) => setError(msg)}
+                />
+              ) : (
+                <form onSubmit={handlePayment} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Phone Number (Ka reeb 252)</label>
+                    <div className="relative flex items-center">
+                      <div className="absolute left-0 inset-y-0 flex items-center pl-4 pr-3 border-r border-white/10 text-white/50 bg-white/5 rounded-l-xl">
+                        +252
+                      </div>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                        placeholder="61XXXXXXX"
+                        maxLength={9}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-20 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20"
+                        required
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="61XXXXXXX"
-                    maxLength={9}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-20 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20"
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {processing ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" /> Processing USSD Push...</>
-                  ) : (
-                    <><Lock className="w-5 h-5" /> Pay ${item.price} Securely</>
-                  )}
-                </button>
-                <p className="text-center text-xs text-white/40 mt-4 flex items-center justify-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-green-400" /> 256-bit encrypted secure payment
-                </p>
-              </div>
-            </form>
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={processing}
+                      className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processing ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Processing USSD Push...</>
+                      ) : (
+                        <><Lock className="w-5 h-5" /> Pay ${item.price} Securely</>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <p className="text-center text-xs text-white/40 flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-green-400" /> 256-bit encrypted secure payment
+              </p>
+            </div>
           </div>
 
           {/* Order Summary */}
