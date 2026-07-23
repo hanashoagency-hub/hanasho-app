@@ -54,9 +54,6 @@ export default function CoursePage() {
       if (res.success && res.course) {
         setCourse(res.course);
         setModules(res.modules);
-        
-        const lessonCount = res.modules.reduce((sum: number, m: any) => sum + m.lessons.length, 0);
-        setTotalLessons(lessonCount);
 
         if (res.modules.length > 0) {
           setActiveModule(res.modules[0].id);

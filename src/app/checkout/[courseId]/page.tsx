@@ -99,14 +99,16 @@ export default function CheckoutPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
-        <div className="text-center bg-[#0A0A0A] border border-white/10 rounded-3xl p-10 max-w-md w-full">
-          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-400" />
+        <div className="text-center bg-[#0A0A0A] border border-white/10 rounded-3xl p-10 max-w-md w-full animate-in fade-in zoom-in duration-500">
+          <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+            <CheckCircle className="w-12 h-12 text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Payment Successful!</h2>
-          <p className="text-white/60 mb-8">You now have full access to {item.title}.</p>
-          <div className="flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-white/30" /></div>
-          <p className="text-white/40 text-sm mt-4">Redirecting to your dashboard...</p>
+          <h2 className="text-3xl font-bold text-white mb-3">Hambalyo!</h2>
+          <p className="text-xl text-white/80 mb-8">Welcome to the course: <span className="font-bold text-white">{item.title}</span></p>
+          <div className="flex justify-center mb-4">
+            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-white/40 text-sm">Redirecting you to the course content...</p>
         </div>
       </div>
     );
