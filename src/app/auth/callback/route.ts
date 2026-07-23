@@ -6,8 +6,8 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
   
-  // Force hanhub.so in production to prevent redirect loops or wrong domains
-  const baseOrigin = origin.includes('localhost') ? origin : 'https://hanhub.so'
+  // Force www.hanhub.so in production to prevent redirect loops or wrong domains
+  const baseOrigin = origin.includes('localhost') ? origin : 'https://www.hanhub.so'
 
   if (code) {
     const supabase = await createClient()

@@ -50,7 +50,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin.includes('localhost') ? window.location.origin : 'https://hanhub.so'}/auth/callback`,
+        redirectTo: `${window.location.origin.includes('localhost') ? window.location.origin : 'https://www.hanhub.so'}/auth/callback`,
       },
     });
     if (error) {
