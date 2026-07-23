@@ -165,10 +165,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         
         {(!isDesktop || !isCollapsed) ? (
           <h2 className="text-xl font-heading font-bold text-[var(--text-primary)] tracking-wider mt-4">
-            HANASHO <span className="text-[var(--brand-primary)]">ADMIN</span>
+            HANHUB <span className="text-[var(--brand-primary)]">ADMIN</span>
           </h2>
         ) : (
-          <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[var(--on-brand)] font-bold text-lg shadow-sm mt-4" title="Hanasho Admin">
+          <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[var(--on-brand)] font-bold text-lg shadow-sm mt-4" title="HanHub Admin">
             H
           </div>
         )}

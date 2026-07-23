@@ -61,7 +61,7 @@ export default function RegisterPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin.includes('localhost') ? window.location.origin : 'https://hanhub.so'}/auth/callback`,
       },
     });
     if (error) {
