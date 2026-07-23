@@ -3,15 +3,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
-function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key);
-}
+import { createClient as createServerClient } from "@/utils/supabase/server";
 
 export async function createCourseAction(courseData: any, lessons: any[]) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     // Insert Course
     const { data: course, error: courseError } = await supabaseAdmin
       .from("courses")
@@ -65,7 +61,7 @@ export async function createCourseAction(courseData: any, lessons: any[]) {
 
 export async function updateCourseAction(id: string, courseData: any) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     const { error } = await supabaseAdmin
       .from("courses")
       .update(courseData)
@@ -85,7 +81,7 @@ export async function updateCourseAction(id: string, courseData: any) {
 
 export async function deleteCourseAction(id: string) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     const { error } = await supabaseAdmin
       .from("courses")
       .delete()
@@ -105,7 +101,7 @@ export async function deleteCourseAction(id: string) {
 
 export async function togglePublishAction(id: string, is_published: boolean) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     const { error } = await supabaseAdmin
       .from("courses")
       .update({ is_published })
@@ -125,7 +121,7 @@ export async function togglePublishAction(id: string, is_published: boolean) {
 
 export async function createModuleAction(courseId: string, title: string, sortOrder: number) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     const { data, error } = await supabaseAdmin
       .from("modules")
       .insert({ course_id: courseId, title, sort_order: sortOrder })
@@ -144,7 +140,7 @@ export async function createModuleAction(courseId: string, title: string, sortOr
 
 export async function deleteModuleAction(id: string, courseId: string) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     const { error } = await supabaseAdmin.from("modules").delete().eq("id", id);
     if (error) throw new Error(error.message);
 
@@ -158,7 +154,7 @@ export async function deleteModuleAction(id: string, courseId: string) {
 
 export async function createLessonAction(moduleId: string, lessonData: any, courseId: string) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     const { error } = await supabaseAdmin.from("lessons").insert({
       module_id: moduleId,
       ...lessonData
@@ -175,7 +171,7 @@ export async function createLessonAction(moduleId: string, lessonData: any, cour
 
 export async function deleteLessonAction(id: string, courseId: string) {
   try {
-    const supabaseAdmin = getAdminClient();
+    const supabaseAdmin = await createServerClient();
     const { error } = await supabaseAdmin.from("lessons").delete().eq("id", id);
     if (error) throw new Error(error.message);
 
