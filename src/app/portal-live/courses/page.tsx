@@ -33,25 +33,22 @@ export default function AdminCoursesPage() {
     lessons: [{ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }]
   };
   
-  const [form, setForm] = useState(defaultForm);
+  const [form, setForm] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("courseFormDraft");
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return defaultForm;
+  });
+  
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
 
-  // Load from localStorage on mount (for creation only)
-  useEffect(() => {
-    const saved = localStorage.getItem("courseFormDraft");
-    if (saved) {
-      try {
-        setForm(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse saved form draft");
-      }
-    }
-  }, []);
-
   // Save to localStorage whenever form changes, if we are NOT editing an existing course
   useEffect(() => {
-    if (!editingCourse) {
+    if (!editingCourse && typeof window !== "undefined") {
       localStorage.setItem("courseFormDraft", JSON.stringify(form));
     }
   }, [form, editingCourse]);
