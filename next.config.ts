@@ -9,6 +9,32 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'hanasho.io',
+          },
+        ],
+        destination: 'https://www.hanhub.so/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'hanhub.so',
+          },
+        ],
+        destination: 'https://www.hanhub.so/:path*',
+        permanent: true,
+      }
+    ];
+  },
   async headers() {
     return [
       {
