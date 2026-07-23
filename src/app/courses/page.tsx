@@ -7,16 +7,18 @@ import {
   BookOpen,
   Loader2,
   ArrowRight,
-  Star
+  Star,
+  CheckCircle
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-import { getPublicCoursesAction } from "@/app/portal-live/actions";
+import { getPublicCoursesAction, checkPurchaseStatusAction } from "@/app/portal-live/actions";
 
 export default function CoursesCatalogPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [reviewsStats, setReviewsStats] = useState<Record<string, { avg: string, count: number }>>({});
   const [loading, setLoading] = useState(true);
+  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const supabase = createClient();
 
   useEffect(() => {
@@ -52,7 +54,20 @@ export default function CoursesCatalogPage() {
           setReviewsStats(finalStats);
         }
       }
-      
+
+      // Check purchase status for logged-in user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && res.success && res.data) {
+        const purchased = new Set<string>();
+        for (const course of res.data) {
+          const status = await checkPurchaseStatusAction(user.id, course.id);
+          if (status?.purchased) {
+            purchased.add(course.id);
+          }
+        }
+        setPurchasedIds(purchased);
+      }
+
       setLoading(false);
     };
 
@@ -116,6 +131,11 @@ export default function CoursesCatalogPage() {
                       {course.price > 0 ? `$${course.price}` : "FREE"}
                     </span>
                   </div>
+                  {purchasedIds.has(course.id) && (
+                    <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Purchased
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
@@ -131,10 +151,10 @@ export default function CoursesCatalogPage() {
                   <p className="text-sm text-[var(--text-secondary)] mb-8 line-clamp-3 flex-grow leading-relaxed">{course.description}</p>
                   
                   <Link 
-                    href={`/courses/${course.id}`}
-                    className="btn-primary w-full py-3 px-4 flex items-center justify-center gap-2"
+                    href={purchasedIds.has(course.id) ? `/courses/${course.id}` : `/courses/${course.id}`}
+                    className={`w-full py-3 px-4 flex items-center justify-center gap-2 rounded-[14px] font-bold transition-all ${purchasedIds.has(course.id) ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30' : 'btn-primary'}`}
                   >
-                    Enroll Now <ArrowRight className="w-4 h-4" />
+                    {purchasedIds.has(course.id) ? (<><CheckCircle className="w-4 h-4" /> Continue Learning</>) : (<>Enroll Now <ArrowRight className="w-4 h-4" /></>)}
                   </Link>
                 </div>
               </div>

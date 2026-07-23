@@ -337,21 +337,53 @@ export async function checkPurchaseStatusAction(userId: string, courseId: string
 export async function getAdminTransactionsAction() {
   try {
     const supabaseAdmin = getAdminClient();
-    const { data, error } = await supabaseAdmin
+    
+    // Fetch transactions without joins (foreign keys may not be set up)
+    const { data: transactions, error } = await supabaseAdmin
       .from("transactions")
-      .select("*, profiles(full_name), courses(title)")
+      .select("*")
       .order("created_at", { ascending: false });
     
     if (error) {
-      // Fallback without joins if profiles/courses relation fails
-      console.error("Transactions fetch with joins failed:", error);
-      const { data: fallback } = await supabaseAdmin
-        .from("transactions")
-        .select("*")
-        .order("created_at", { ascending: false });
-      return { success: true, transactions: fallback || [] };
+      console.error("Transactions fetch error:", error);
+      return { success: false, transactions: [] };
     }
-    return { success: true, transactions: data || [] };
+
+    if (!transactions || transactions.length === 0) {
+      return { success: true, transactions: [] };
+    }
+
+    // Resolve user names
+    const userIds = [...new Set(transactions.map(t => t.user_id).filter(Boolean))];
+    const courseIds = [...new Set(transactions.map(t => t.course_id).filter(Boolean))];
+    
+    let profilesMap: Record<string, string> = {};
+    let coursesMap: Record<string, string> = {};
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+      (profiles || []).forEach((p: any) => { profilesMap[p.id] = p.full_name || "Unknown"; });
+    }
+
+    if (courseIds.length > 0) {
+      const { data: courses } = await supabaseAdmin
+        .from("courses")
+        .select("id, title")
+        .in("id", courseIds);
+      (courses || []).forEach((c: any) => { coursesMap[c.id] = c.title || "—"; });
+    }
+
+    // Enrich transactions
+    const enriched = transactions.map(tx => ({
+      ...tx,
+      profiles: { full_name: profilesMap[tx.user_id] || "Unknown" },
+      courses: { title: coursesMap[tx.course_id] || "—" },
+    }));
+
+    return { success: true, transactions: enriched };
   } catch (error: any) {
     console.error("Admin Transactions Fetch Error:", error);
     return { success: false, transactions: [] };

@@ -17,24 +17,18 @@ export default async function DashboardPage() {
   try {
     const { data, error } = await supabaseAdmin
       .from("purchases")
-      .select("course_id, item_id, item_type, courses(id, title, cover_image, description)")
+      .select("course_id, courses(id, title, cover_image, description)")
       .eq("user_id", user.id);
     
-    if (error && error.code === '42703') {
-      // item_id/item_type columns don't exist yet - fallback
-      const { data: fallbackData } = await supabaseAdmin
-        .from("purchases")
-        .select("course_id, courses(id, title, cover_image, description)")
-        .eq("user_id", user.id);
-      purchases = (fallbackData || []).map(p => ({ ...p, item_type: 'course', item_id: p.course_id }));
-    } else {
-      purchases = data || [];
+    if (error) {
+      console.error("Dashboard purchases fetch error:", error);
     }
+    purchases = data || [];
   } catch (err) {
     console.error("Dashboard purchases fetch error:", err);
   }
 
-  const purchasedCourses = (purchases?.filter(p => p.item_type === 'course' || !p.item_type).map(p => p.courses) || []).filter(Boolean) as any[];
+  const purchasedCourses = (purchases?.map(p => p.courses) || []).filter(Boolean) as any[];
   const courseIds = purchasedCourses.map((c: any) => c?.id).filter(Boolean);
 
   // Fetch enrolled diplomas

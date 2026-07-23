@@ -88,8 +88,7 @@ export default function CheckoutPage() {
       if (data.success) {
         setSuccess(true);
         setTimeout(() => {
-        if (itemType === "course") router.push(`/learn/${itemId}`);
-          else router.push(`/dashboard`); // diploma and zoom redirect to dashboard
+          router.push(`/dashboard`);
         }, 3000);
       } else {
         setError(data.error || "Payment failed. Fadlan hubi in taleefankaagu furan yahay oo aad leedahay lacag kugu filan.");
