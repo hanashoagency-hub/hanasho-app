@@ -1,20 +1,38 @@
 import React from "react";
 import { BookOpen, Clock, Award, Video } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { getAdminClient } from "@/utils/certificates";
 import Link from "next/link";
 import RewardsWidget from "@/components/RewardsWidget";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const supabaseAdmin = getAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return null;
 
-  // Fetch purchased courses
-  const { data: purchases } = await supabase
-    .from("purchases")
-    .select("course_id, item_id, item_type, courses(id, title, cover_image, description)")
-    .eq("user_id", user.id);
+  // Fetch purchased courses using admin client to bypass RLS
+  let purchases: any[] = [];
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("purchases")
+      .select("course_id, item_id, item_type, courses(id, title, cover_image, description)")
+      .eq("user_id", user.id);
+    
+    if (error && error.code === '42703') {
+      // item_id/item_type columns don't exist yet - fallback
+      const { data: fallbackData } = await supabaseAdmin
+        .from("purchases")
+        .select("course_id, courses(id, title, cover_image, description)")
+        .eq("user_id", user.id);
+      purchases = (fallbackData || []).map(p => ({ ...p, item_type: 'course', item_id: p.course_id }));
+    } else {
+      purchases = data || [];
+    }
+  } catch (err) {
+    console.error("Dashboard purchases fetch error:", err);
+  }
 
   const purchasedCourses = (purchases?.filter(p => p.item_type === 'course' || !p.item_type).map(p => p.courses) || []).filter(Boolean) as any[];
   const courseIds = purchasedCourses.map((c: any) => c?.id).filter(Boolean);

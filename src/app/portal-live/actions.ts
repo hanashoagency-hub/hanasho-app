@@ -316,3 +316,20 @@ export async function getCheckoutItemAction(table: string, id: string) {
     return { success: false, item: null };
   }
 }
+
+export async function checkPurchaseStatusAction(userId: string, courseId: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("purchases")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("course_id", courseId)
+      .maybeSingle();
+      
+    return { purchased: !!data };
+  } catch (error: any) {
+    console.error("Purchase Status Check Error:", error);
+    return { purchased: false };
+  }
+}

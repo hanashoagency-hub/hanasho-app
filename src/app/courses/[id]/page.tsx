@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
-import { getPublicCourseDetailsAction } from '@/app/portal-live/actions';
+import { getPublicCourseDetailsAction, checkPurchaseStatusAction } from '@/app/portal-live/actions';
 import Link from 'next/link';
 import CourseReviewSection from './CourseReviewSection';
 
@@ -81,10 +81,10 @@ export default function CoursePage() {
         }
       }
 
-      // 5. Check Purchase Status
+      // 5. Check Purchase Status (using server action to bypass RLS)
       if (currentUser) {
-        const { data: purchase } = await supabase.from('purchases').select('*').eq('user_id', currentUser.id).eq('course_id', courseId).single();
-        if (purchase) {
+        const purchaseRes = await checkPurchaseStatusAction(currentUser.id, courseId);
+        if (purchaseRes.purchased) {
           setHasPurchased(true);
         }
       }
