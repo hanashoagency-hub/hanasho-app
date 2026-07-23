@@ -26,13 +26,35 @@ export default function AdminCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [form, setForm] = useState({ 
+  
+  const defaultForm = { 
     title: "", description: "", cover_image: "", price: 0, currency: "USD",
     total_hours: 0, total_lessons: 0, benefits: "", materials_included: "",
     lessons: [{ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }]
-  });
+  };
+  
+  const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
+
+  // Load from localStorage on mount (for creation only)
+  useEffect(() => {
+    const saved = localStorage.getItem("courseFormDraft");
+    if (saved) {
+      try {
+        setForm(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved form draft");
+      }
+    }
+  }, []);
+
+  // Save to localStorage whenever form changes, if we are NOT editing an existing course
+  useEffect(() => {
+    if (!editingCourse) {
+      localStorage.setItem("courseFormDraft", JSON.stringify(form));
+    }
+  }, [form, editingCourse]);
 
   const fetchCourses = async () => {
     const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: false });
@@ -44,11 +66,16 @@ export default function AdminCoursesPage() {
 
   const openCreate = () => {
     setEditingCourse(null);
-    setForm({ 
-      title: "", description: "", cover_image: "", price: 0, currency: "USD",
-      total_hours: 0, total_lessons: 0, benefits: "", materials_included: "",
-      lessons: [{ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }]
-    });
+    const saved = localStorage.getItem("courseFormDraft");
+    if (saved) {
+      try {
+        setForm(JSON.parse(saved));
+      } catch (e) {
+        setForm(defaultForm);
+      }
+    } else {
+      setForm(defaultForm);
+    }
     setShowModal(true);
   };
 
@@ -96,6 +123,7 @@ export default function AdminCoursesPage() {
         if (!result.success) {
           alert("Cillad ayaa dhacday. Macluumaadkaagu wuu diiday sababtoo ah: " + result.error);
         } else if (result.courseId) {
+          localStorage.removeItem("courseFormDraft");
           setShowModal(false);
           fetchCourses();
           window.location.href = `/portal-live/courses/${result.courseId}`;
