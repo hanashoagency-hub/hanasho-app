@@ -1,12 +1,34 @@
 import React from "react";
 import { Users, BookOpen, CreditCard, TrendingUp } from "lucide-react";
+import { getAdminClient } from "@/utils/certificates";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const supabaseAdmin = getAdminClient();
+
+  // Fetch counts
+  const { count: studentCount } = await supabaseAdmin.from("profiles").select("*", { count: "exact", head: true });
+  const { count: courseCount } = await supabaseAdmin.from("courses").select("*", { count: "exact", head: true }).eq("is_published", true);
+  
+  // Fetch transactions to calculate revenue and show recents
+  const { data: transactions } = await supabaseAdmin
+    .from("transactions")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  let totalRevenue = 0;
+  const recentTransactions = transactions?.slice(0, 5) || [];
+  
+  transactions?.forEach((tx) => {
+    if (tx.status === "success") {
+      totalRevenue += Number(tx.amount) || 0;
+    }
+  });
+
   const stats = [
-    { title: "Total Students", value: "0", icon: Users },
-    { title: "Active Courses", value: "0", icon: BookOpen },
-    { title: "Total Revenue", value: "$0.00", icon: CreditCard },
-    { title: "Active Subscriptions", value: "0", icon: TrendingUp },
+    { title: "Total Students", value: studentCount?.toString() || "0", icon: Users },
+    { title: "Active Courses", value: courseCount?.toString() || "0", icon: BookOpen },
+    { title: "Waafi Revenue", value: `$${totalRevenue.toFixed(2)}`, icon: CreditCard },
+    { title: "Transactions", value: transactions?.length.toString() || "0", icon: TrendingUp },
   ];
 
   return (
@@ -35,16 +57,38 @@ export default function AdminDashboardPage() {
         {/* Recent Transactions */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[20px] p-6">
           <h2 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-6">Recent WaafiPay Transactions</h2>
-          <div className="text-center py-10 border border-dashed border-[var(--border-color)] rounded-[12px]">
-            <p className="text-[var(--text-secondary)]">No transactions yet.</p>
-          </div>
+          {recentTransactions.length > 0 ? (
+            <div className="space-y-4">
+              {recentTransactions.map((tx) => (
+                <div key={tx.id} className="flex justify-between items-center p-4 border border-[var(--border-color)] rounded-[12px]">
+                  <div>
+                    <p className="font-bold text-[var(--text-primary)]">{tx.phone_number}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{new Date(tx.created_at).toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-[var(--brand-primary)]">+${tx.amount}</p>
+                    <span className={`text-xs px-2 py-1 rounded-full ${tx.status === 'success' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                      {tx.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10 border border-dashed border-[var(--border-color)] rounded-[12px]">
+              <p className="text-[var(--text-secondary)]">No transactions yet.</p>
+            </div>
+          )}
         </div>
 
         {/* Recent Users */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[20px] p-6">
-          <h2 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-6">Recently Registered Students</h2>
-          <div className="text-center py-10 border border-dashed border-[var(--border-color)] rounded-[12px]">
-            <p className="text-[var(--text-secondary)]">No students registered yet.</p>
+          <h2 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-6">Action Required</h2>
+          <div className="text-center py-10 border border-dashed border-[var(--border-color)] rounded-[12px] bg-red-500/5">
+            <h3 className="font-bold text-red-400 mb-2">IMPORTANT: Run Database Migration</h3>
+            <p className="text-[var(--text-secondary)] text-sm mb-4 px-4">
+              If courses aren't unlocking after a successful WaafiPay purchase, you MUST run the database update script in your Supabase SQL Editor.
+            </p>
           </div>
         </div>
       </div>

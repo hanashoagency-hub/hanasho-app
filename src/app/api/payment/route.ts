@@ -79,11 +79,9 @@ export async function POST(request: Request) {
     console.log("WaafiPay Response:", JSON.stringify(data));
 
     // Save transaction in database regardless of success/fail first
-    const { data: tx, error: txError } = await supabaseAdmin.from('transactions').insert({
+    const txPayload: any = {
       user_id: user.id,
       course_id: itemType === 'course' ? targetItemId : null, // keep legacy field for courses if needed
-      item_id: targetItemId,
-      item_type: itemType,
       amount,
       currency,
       payment_method: paymentMethod,
@@ -91,7 +89,25 @@ export async function POST(request: Request) {
       reference_id: referenceId,
       status: data.responseCode === '2001' ? 'success' : 'failed',
       waafipay_response: data
-    }).select().single();
+    };
+
+    let txError = null;
+    try {
+      const res = await supabaseAdmin.from('transactions').insert({
+        ...txPayload,
+        item_id: targetItemId,
+        item_type: itemType,
+      }).select().single();
+      txError = res.error;
+
+      if (txError && txError.code === '42703') { // undefined_column
+        console.warn("Missing item_id/item_type in transactions. Falling back.");
+        const fb = await supabaseAdmin.from('transactions').insert(txPayload).select().single();
+        txError = fb.error;
+      }
+    } catch (err) {
+      console.error("Tx Fallback Error:", err);
+    }
 
     if (txError) {
       console.error("Tx Error:", txError);
@@ -99,12 +115,28 @@ export async function POST(request: Request) {
 
     if (data.responseCode === '2001') {
       // Payment successful, grant access
-      await supabaseAdmin.from('purchases').insert({
+      const payload: any = {
         user_id: user.id,
-        course_id: itemType === 'course' ? targetItemId : null, // keep legacy field for courses
-        item_id: targetItemId,
-        item_type: itemType
-      });
+        course_id: itemType === 'course' ? targetItemId : null,
+      };
+
+      // Add new columns if the migration was run, otherwise we'll try to insert and fallback
+      try {
+        const { error: purchaseError } = await supabaseAdmin.from('purchases').insert({
+          ...payload,
+          item_id: targetItemId,
+          item_type: itemType
+        });
+        
+        if (purchaseError && purchaseError.code === '42703') { // undefined_column
+          console.warn("Missing item_id/item_type columns. Falling back to legacy course_id insert.");
+          await supabaseAdmin.from('purchases').insert(payload);
+        } else if (purchaseError) {
+          console.error("Purchase Insert Error:", purchaseError);
+        }
+      } catch (err) {
+        console.error("Purchase Fallback Error:", err);
+      }
 
       return NextResponse.json({ success: true, message: 'Payment successful, item unlocked!' });
     } else {
