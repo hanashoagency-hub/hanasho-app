@@ -333,3 +333,63 @@ export async function checkPurchaseStatusAction(userId: string, courseId: string
     return { purchased: false };
   }
 }
+
+export async function getAdminTransactionsAction() {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("transactions")
+      .select("*, profiles(full_name), courses(title)")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      // Fallback without joins if profiles/courses relation fails
+      console.error("Transactions fetch with joins failed:", error);
+      const { data: fallback } = await supabaseAdmin
+        .from("transactions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      return { success: true, transactions: fallback || [] };
+    }
+    return { success: true, transactions: data || [] };
+  } catch (error: any) {
+    console.error("Admin Transactions Fetch Error:", error);
+    return { success: false, transactions: [] };
+  }
+}
+
+export async function getAdminStatsAction() {
+  try {
+    const supabaseAdmin = getAdminClient();
+    
+    const { count: studentCount } = await supabaseAdmin
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
+
+    const { count: courseCount } = await supabaseAdmin
+      .from("courses")
+      .select("*", { count: "exact", head: true })
+      .eq("is_published", true);
+
+    const { data: transactions } = await supabaseAdmin
+      .from("transactions")
+      .select("amount, status")
+      .eq("status", "success");
+
+    let totalRevenue = 0;
+    (transactions || []).forEach((tx: any) => {
+      totalRevenue += Number(tx.amount) || 0;
+    });
+
+    return {
+      success: true,
+      studentCount: studentCount || 0,
+      courseCount: courseCount || 0,
+      totalRevenue,
+      totalTransactions: transactions?.length || 0,
+    };
+  } catch (error: any) {
+    console.error("Admin Stats Fetch Error:", error);
+    return { success: false, studentCount: 0, courseCount: 0, totalRevenue: 0, totalTransactions: 0 };
+  }
+}

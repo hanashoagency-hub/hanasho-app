@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Loader2, CreditCard, CheckCircle, XCircle, Clock, Search, Filter } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
+import { getAdminTransactionsAction } from "../actions";
 
 interface Transaction {
   id: string;
@@ -23,18 +23,14 @@ export default function AdminTransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const supabase = createClient();
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase
-        .from("transactions")
-        .select("*, profiles(full_name), courses(title)")
-        .order("created_at", { ascending: false });
-      setTransactions(data || []);
+    const fetchData = async () => {
+      const res = await getAdminTransactionsAction();
+      setTransactions((res.transactions || []) as Transaction[]);
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
   const statusIcon = (status: string) => {
