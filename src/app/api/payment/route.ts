@@ -70,32 +70,44 @@ export async function POST(request: Request) {
 
     const isSuccess = data.responseCode === '2001';
 
-    // Save transaction - use only guaranteed columns
-    try {
-      await supabaseAdmin.from('transactions').insert({
-        user_id: user.id,
-        course_id: targetItemId,
-        amount,
-        currency,
-        payment_method: paymentMethod,
-        phone_number: phoneNumber,
-        reference_id: referenceId,
-        status: isSuccess ? 'success' : 'failed',
-        waafipay_response: data
-      });
-    } catch (txErr) {
+    // Save transaction
+    const { error: txErr } = await supabaseAdmin.from('transactions').insert({
+      user_id: user.id,
+      course_id: targetItemId,
+      amount: Number(amount),
+      currency,
+      payment_method: paymentMethod,
+      phone_number: phoneNumber,
+      reference_id: referenceId,
+      status: isSuccess ? 'success' : 'failed',
+      waafipay_response: data
+    });
+
+    if (txErr) {
       console.error("Transaction save error:", txErr);
+      // We still want to give them access if they paid, so we don't return error yet
     }
 
     if (isSuccess) {
-      // Save purchase record - use only guaranteed columns
-      try {
-        await supabaseAdmin.from('purchases').insert({
-          user_id: user.id,
-          course_id: targetItemId,
-        });
-      } catch (purchaseErr) {
+      // Save purchase record
+      const { error: purchaseErr } = await supabaseAdmin.from('purchases').insert({
+        user_id: user.id,
+        course_id: targetItemId,
+      });
+
+      if (purchaseErr) {
+        // If the error is a unique constraint violation, it means they already own it!
+        if (purchaseErr.code === '23505') {
+          console.log("User already owns this course. Proceeding to unlock.");
+          return NextResponse.json({ success: true, message: 'Payment successful, item already owned!' });
+        }
+        
         console.error("Purchase save error:", purchaseErr);
+        // If we failed to save the purchase for another reason, return an error.
+        return NextResponse.json({ 
+          success: false, 
+          error: `Payment succeeded but failed to save purchase: ${purchaseErr.message}` 
+        }, { status: 500 });
       }
 
       return NextResponse.json({ success: true, message: 'Payment successful, item unlocked!' });

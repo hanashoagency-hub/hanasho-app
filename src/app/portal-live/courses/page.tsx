@@ -112,7 +112,7 @@ export default function AdminCoursesPage() {
         }
       } else {
         // Parse YouTube IDs before sending to server
-        const parsedLessons = lessons.map(l => ({
+        const parsedLessons = lessons.map((l: any) => ({
           ...l,
           youtube_video_id: parseYoutubeId(l.youtube_video_id)
         }));
@@ -146,7 +146,7 @@ export default function AdminCoursesPage() {
   };
 
   const removeLessonField = (index: number) => {
-    const newLessons = form.lessons.filter((_, i) => i !== index);
+    const newLessons = form.lessons.filter((_: any, i: number) => i !== index);
     setForm({ ...form, lessons: newLessons });
   };
 
@@ -296,7 +296,7 @@ export default function AdminCoursesPage() {
                   </h3>
                   
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#333 transparent' }}>
-                    {form.lessons.map((lesson, idx) => (
+                    {form.lessons.map((lesson: any, idx: number) => (
                       <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-4 relative group">
                         <button onClick={() => removeLessonField(idx)} className="absolute top-3 right-3 text-red-400/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Trash2 className="w-4 h-4" />
