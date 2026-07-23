@@ -24,24 +24,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .maybeSingle();
 
   return (
-    <div className="min-h-screen bg-transparent flex text-[var(--text-primary)] font-body">
-      <DashboardSidebar
-        profileName={profile?.full_name || "Student"}
-        email={user.email || ""}
-        avatarLetter={(profile?.full_name || user.email || "?")[0].toUpperCase()}
-        xp={stats?.xp ?? 0}
-        streakCount={stats?.streak_count ?? 0}
-        isAdmin={profile?.role === "admin"}
-        themeToggle={<DashboardThemeToggle />}
-      />
-
-      {/* Main Content — full width on mobile, offset on desktop */}
-      <main className="flex-1 md:ml-64 p-6 md:p-8">
-        <div className="max-w-5xl mx-auto pt-14 md:pt-0">
-          {children}
-        </div>
-      </main>
-    </div>
+    <DashboardSidebar
+      profileName={profile?.full_name || "Student"}
+      email={user.email || ""}
+      avatarLetter={(profile?.full_name || user.email || "?")[0].toUpperCase()}
+      xp={stats?.xp ?? 0}
+      streakCount={stats?.streak_count ?? 0}
+      isAdmin={profile?.role === "admin"}
+      themeToggle={<DashboardThemeToggle />}
+    >
+      {children}
+    </DashboardSidebar>
   );
 }
 
