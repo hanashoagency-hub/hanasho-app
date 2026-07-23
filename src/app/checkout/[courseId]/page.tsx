@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, Loader2, ArrowLeft, CheckCircle, CreditCard, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { getCheckoutItemAction } from "@/app/portal-live/actions";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -37,8 +38,9 @@ export default function CheckoutPage() {
       if (itemType === "diploma") table = "diplomas";
       if (itemType === "zoom") table = "zoom_classes";
 
-      const { data } = await supabase.from(table).select("*").eq("id", itemId).single();
-      if (data) {
+      const res = await getCheckoutItemAction(table, itemId);
+      if (res.success && res.item) {
+        const data = res.item;
         // Adjust price based on tier if it's a diploma
         if (itemType === "diploma") {
           const tier = searchParams.get("tier");

@@ -275,9 +275,46 @@ export async function getPublicCourseDetailsAction(courseId: string) {
     // Fetch modules
     const { data: mods } = await supabaseAdmin
       .from("modules")
-      .select("*")
       .eq("course_id", courseId)
       .order("sort_order", { ascending: true });
+
+    const modulesWithLessons = [];
+    for (const mod of mods || []) {
+      const { data: lessons } = await supabaseAdmin
+        .from("lessons")
+        .select("*")
+        .eq("module_id", mod.id)
+        .order("sort_order", { ascending: true });
+      modulesWithLessons.push({ ...mod, lessons: lessons || [] });
+    }
+
+    return { 
+      success: true, 
+      course, 
+      modules: modulesWithLessons 
+    };
+  } catch (error: any) {
+    console.error("Public Fetch Course Details Error:", error);
+    return { success: false, course: null, modules: [] };
+  }
+}
+
+export async function getCheckoutItemAction(table: string, id: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from(table)
+      .select("*")
+      .eq("id", id)
+      .single();
+      
+    if (error || !data) throw new Error("Item not found");
+    return { success: true, item: data };
+  } catch (error: any) {
+    console.error("Checkout Item Fetch Error:", error);
+    return { success: false, item: null };
+  }
+}
 
     // Fetch lessons for these modules
     const modulesWithLessons = [];
