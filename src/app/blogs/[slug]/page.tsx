@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Calendar, Share2, Facebook, Twitter, Linkedin } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, Share2, Check } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 interface Blog {
@@ -20,7 +20,23 @@ export default function SingleBlogPage() {
   const router = useRouter();
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
   const supabase = createClient();
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: blog?.title, url });
+      } catch {
+        // user cancelled the native share sheet — no-op
+      }
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -76,14 +92,11 @@ export default function SingleBlogPage() {
         {/* Share Buttons */}
         <div className="flex items-center gap-3 pt-6 border-t border-[var(--border-color)]">
           <span className="text-sm font-bold text-[var(--text-secondary)]">Share:</span>
-          <button className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors">
-            <Twitter className="w-4 h-4" />
-          </button>
-          <button className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors">
-            <Linkedin className="w-4 h-4" />
-          </button>
-          <button className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors">
-            <Facebook className="w-4 h-4" />
+          <button 
+            onClick={handleShare}
+            className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors"
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
           </button>
         </div>
       </div>

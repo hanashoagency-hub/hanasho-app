@@ -33,11 +33,14 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3">
               {[
-                { href: "/#about", label: "Annaga" },
+                { href: "/about", label: "Annaga" },
                 { href: "/services", label: "Services & Portfolio" },
                 { href: "/courses", label: "Koorsooyinka" },
+                { href: "/ai-tools", label: "AI Tools" },
+                { href: "/blogs", label: "Blog" },
                 { href: "/marketplace", label: "Marketplace" },
                 { href: "/community", label: "Community" },
+                { href: "/leaderboard", label: "Leaderboard" },
                 { href: "/dashboard", label: "Dashboard" },
               ].map((link) => (
                 <li key={link.href}>

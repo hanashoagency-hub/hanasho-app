@@ -2,6 +2,7 @@
 
 import { createClient as createServerClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/utils/certificates";
+import { LESSON_COMPLETE_XP, FIRST_LESSON_BADGE_CODE } from "@/utils/gamification";
 import { revalidatePath } from "next/cache";
 
 // Human-readable, verifiable certificate number, e.g. HAN-7F3A9C21
@@ -61,7 +62,16 @@ export async function toggleLessonCompleteAction(
     if (!purchase)
       return { success: false, error: "You must purchase this course first." };
 
+    let isNewCompletion = false;
     if (completed) {
+      const { data: existingRow } = await admin
+        .from("lesson_progress")
+        .select("lesson_id")
+        .eq("user_id", user.id)
+        .eq("lesson_id", lessonId)
+        .maybeSingle();
+      isNewCompletion = !existingRow;
+
       const { error } = await admin
         .from("lesson_progress")
         .upsert(
@@ -96,8 +106,35 @@ export async function toggleLessonCompleteAction(
       certificate = await ensureCertificate(admin, user.id, courseId);
     }
 
+    if (isNewCompletion) {
+      await admin.rpc("award_xp", {
+        p_user_id: user.id,
+        p_amount: LESSON_COMPLETE_XP,
+        p_reason: "lesson_complete",
+      });
+
+      const { count: totalCompletedEver } = await admin
+        .from("lesson_progress")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if ((totalCompletedEver ?? 0) === 1) {
+        const { data: badge } = await admin
+          .from("badges")
+          .select("id")
+          .eq("code", FIRST_LESSON_BADGE_CODE)
+          .maybeSingle();
+        if (badge) {
+          await admin
+            .from("user_badges")
+            .upsert({ user_id: user.id, badge_id: badge.id }, { onConflict: "user_id,badge_id" });
+        }
+      }
+    }
+
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/my-courses");
+    revalidatePath("/leaderboard");
 
     return {
       success: true,

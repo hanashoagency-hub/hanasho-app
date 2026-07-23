@@ -86,9 +86,10 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { href: "/#about", label: "Annaga" },
+    { href: "/about", label: "Annaga" },
     { href: "/services", label: "Services" },
     { href: "/courses", label: "Courses" },
+    { href: "/ai-tools", label: "AI Tools" },
     { href: "/blogs", label: "Blog" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/community", label: "Community" },

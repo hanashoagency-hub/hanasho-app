@@ -5,12 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 // Plain module (NOT "use server") so it can be imported by server components
 // and server actions alike.
 export function getAdminClient() {
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    "https://worerikjebqpeibrepgz.supabase.co";
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvcmVyaWtqZWJxcGVpYnJlcGd6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDYzNTk4NiwiZXhwIjoyMDk2MjExOTg2fQ.rHBeYbUnD0WNCgUduf95ddjBx3cSrsTeoPtXMu0Y9dU";
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   return createClient(url, key);
 }
 

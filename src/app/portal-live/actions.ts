@@ -4,10 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 
 function getAdminClient() {
-  // IGNORE Vercel environment variables because they are misconfigured.
-  // FORCE the use of the correct Service Role Key to bypass RLS.
-  const url = "https://worerikjebqpeibrepgz.supabase.co";
-  const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvcmVyaWtqZWJxcGVpYnJlcGd6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDYzNTk4NiwiZXhwIjoyMDk2MjExOTg2fQ.rHBeYbUnD0WNCgUduf95ddjBx3cSrsTeoPtXMu0Y9dU";
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   return createClient(url, key);
 }
 

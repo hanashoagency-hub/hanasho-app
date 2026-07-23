@@ -2,6 +2,7 @@ import React from "react";
 import { BookOpen, Clock, Award } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import RewardsWidget from "@/components/RewardsWidget";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -55,6 +56,28 @@ export default async function DashboardPage() {
   const hoursLearned = (totalMinutes / 60).toFixed(1);
   const certificateCount = certificates?.length || 0;
 
+  // Gamification: XP, claimed rewards, earned badges
+  const { data: stats } = await supabase
+    .from("user_stats")
+    .select("xp")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const { data: claims } = await supabase
+    .from("reward_claims")
+    .select("reward_code")
+    .eq("user_id", user.id);
+
+  const { data: badgeRows } = await supabase
+    .from("user_badges")
+    .select("badges(code, label)")
+    .eq("user_id", user.id);
+
+  const earnedBadges = (badgeRows || [])
+    .map((row: any) => row.badges)
+    .filter(Boolean)
+    .map((b: any) => ({ code: b.code, label: b.label }));
+
   return (
     <div>
       <header className="mb-10">
@@ -91,6 +114,15 @@ export default async function DashboardPage() {
             <h3 className="text-2xl font-bold text-[var(--text-primary)] font-heading">{certificateCount}</h3>
           </div>
         </div>
+      </div>
+
+      {/* Rewards & Badges */}
+      <div className="mb-10">
+        <RewardsWidget
+          xp={stats?.xp ?? 0}
+          claimedCodes={(claims || []).map((c: any) => c.reward_code)}
+          earnedBadges={earnedBadges}
+        />
       </div>
 
       {/* Courses List */}

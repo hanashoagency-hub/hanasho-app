@@ -1,9 +1,10 @@
 import React from "react";
 import Link from "next/link";
-import { BookOpen, User, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { BookOpen, User, Settings, LogOut, ArrowLeft, Trophy, Flame } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import DashboardThemeToggle from "@/components/DashboardThemeToggle";
+import { recordDailyLoginAction } from "@/app/dashboard/gamification-actions";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -15,6 +16,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Fetch profile to get name and role
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+
+  await recordDailyLoginAction();
+  const { data: stats } = await supabase
+    .from("user_stats")
+    .select("xp, streak_count")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   return (
     <div className="min-h-screen bg-transparent flex text-[var(--text-primary)] font-body">
@@ -36,6 +44,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <p className="text-[var(--text-secondary)] text-xs truncate">{user.email}</p>
             </div>
           </div>
+          <div className="flex items-center gap-3 mt-4">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--bg-primary)] border border-[var(--border-color)] text-xs font-bold text-[var(--brand-primary)]">
+              <Trophy className="w-3.5 h-3.5" /> {stats?.xp ?? 0} XP
+            </span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--bg-primary)] border border-[var(--border-color)] text-xs font-bold text-orange-400">
+              <Flame className="w-3.5 h-3.5" /> {stats?.streak_count ?? 0} day streak
+            </span>
+          </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
@@ -50,6 +66,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm">
             <Settings className="w-5 h-5 text-[var(--text-secondary)]" />
             Settings
+          </Link>
+          <Link href="/leaderboard" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm">
+            <Trophy className="w-5 h-5 text-[var(--brand-primary)]" />
+            Leaderboard
           </Link>
           {profile?.role === 'admin' && (
             <Link href="/portal-live" className="flex items-center gap-3 px-4 py-3 rounded-[12px] text-red-400 hover:bg-red-500/10 transition-colors font-bold mt-4 border border-red-500/20 bg-red-500/5 text-sm">
