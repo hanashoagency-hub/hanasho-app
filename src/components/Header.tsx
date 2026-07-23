@@ -59,7 +59,7 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { href: "/#about", label: dict.nav.about, icon: Info },
+    { href: "/about", label: dict.nav.about, icon: Info },
     { href: "/services", label: dict.nav.services, icon: Briefcase },
     { href: "/courses", label: dict.nav.courses, icon: BookOpen },
     { href: "/ai-tools", label: dict.nav.aiTools, icon: Wrench },

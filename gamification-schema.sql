@@ -4,7 +4,7 @@
 -- =============================================
 
 -- 1. USER STATS (XP + streaks)
-CREATE TABLE public.user_stats (
+CREATE TABLE IF NOT EXISTS public.user_stats (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
   xp INT NOT NULL DEFAULT 0,
   streak_count INT NOT NULL DEFAULT 0,
@@ -14,7 +14,7 @@ CREATE TABLE public.user_stats (
 );
 
 -- 2. XP EVENTS (append-only log, for auditing/history)
-CREATE TABLE public.xp_events (
+CREATE TABLE IF NOT EXISTS public.xp_events (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   amount INT NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE public.xp_events (
 );
 
 -- 3. BADGES (catalog)
-CREATE TABLE public.badges (
+CREATE TABLE IF NOT EXISTS public.badges (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   code TEXT UNIQUE NOT NULL,
   label TEXT NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE public.badges (
 );
 
 -- 4. USER BADGES (earned)
-CREATE TABLE public.user_badges (
+CREATE TABLE IF NOT EXISTS public.user_badges (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   badge_id UUID REFERENCES public.badges(id) ON DELETE CASCADE NOT NULL,
   earned_at TIMESTAMPTZ DEFAULT NOW(),
@@ -41,7 +41,7 @@ CREATE TABLE public.user_badges (
 );
 
 -- 5. REWARD CLAIMS (manual claim audit trail)
-CREATE TABLE public.reward_claims (
+CREATE TABLE IF NOT EXISTS public.reward_claims (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   reward_code TEXT NOT NULL,
@@ -57,7 +57,8 @@ INSERT INTO public.badges (code, label, description, icon, xp_threshold) VALUES
   ('first_lesson',   'First Step',      'Completed your first lesson.',              'BookOpen',NULL),
   ('bronze_learner', 'Bronze Learner',  'Reached 100 XP.',                           'Award',   100),
   ('silver_learner', 'Silver Learner',  'Reached 500 XP.',                           'Award',   500),
-  ('gold_learner',   'Gold Learner',    'Reached 1500 XP.',                          'Award',   1500);
+  ('gold_learner',   'Gold Learner',    'Reached 1500 XP.',                          'Award',   1500)
+ON CONFLICT (code) DO NOTHING;
 
 -- =============================================
 -- FUNCTIONS
@@ -156,16 +157,21 @@ ALTER TABLE public.reward_claims ENABLE ROW LEVEL SECURITY;
 
 -- USER_STATS: public read (needed for the leaderboard); writes only via
 -- service-role server actions (no INSERT/UPDATE policy for regular users).
+DROP POLICY IF EXISTS "User stats are viewable by everyone" ON public.user_stats;
 CREATE POLICY "User stats are viewable by everyone" ON public.user_stats FOR SELECT USING (true);
 
 -- XP_EVENTS: users can see their own event history only.
+DROP POLICY IF EXISTS "Users can view their own xp events" ON public.xp_events;
 CREATE POLICY "Users can view their own xp events" ON public.xp_events FOR SELECT USING (auth.uid() = user_id);
 
 -- BADGES: public catalog, readable by everyone.
+DROP POLICY IF EXISTS "Badges are viewable by everyone" ON public.badges;
 CREATE POLICY "Badges are viewable by everyone" ON public.badges FOR SELECT USING (true);
 
 -- USER_BADGES: public read (needed to show badges on leaderboard/profiles).
+DROP POLICY IF EXISTS "User badges are viewable by everyone" ON public.user_badges;
 CREATE POLICY "User badges are viewable by everyone" ON public.user_badges FOR SELECT USING (true);
 
 -- REWARD_CLAIMS: users can see their own claims only; writes via service-role only.
+DROP POLICY IF EXISTS "Users can view their own reward claims" ON public.reward_claims;
 CREATE POLICY "Users can view their own reward claims" ON public.reward_claims FOR SELECT USING (auth.uid() = user_id);

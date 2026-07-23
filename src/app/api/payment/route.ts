@@ -39,14 +39,14 @@ export async function POST(request: Request) {
     const payload = {
       schemaVersion: "1.0",
       requestId: referenceId,
-      timestamp: Date.now().toString(),
+      timestamp: Math.floor(Date.now() / 1000).toString(),
       channelName: "WEB",
       serviceName: "API_PURCHASE",
       serviceParams: {
         merchantUid,
         apiUserId,
         apiKey,
-        paymentMethod: "mwallet_account",
+        paymentMethod: "MWALLET_ACCOUNT",
         payerInfo: {
           accountNo: phoneNumber
         },
