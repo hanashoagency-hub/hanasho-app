@@ -8,8 +8,10 @@ import XirfadleAIWidget from "@/components/XirfadleAIWidget";
 import ThemeProvider from "@/components/ThemeProvider";
 import RainBackground from "@/components/RainBackground";
 import TutorialButton from "@/components/TutorialButton";
+import LanguageProvider from "@/i18n/LanguageProvider";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('hanhub-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+const LANG_INIT_SCRIPT = `(function(){try{var l=localStorage.getItem('hanhub-lang');if(l){document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr';}}catch(e){}})();`;
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,24 +47,27 @@ export default function RootLayout({
     <html lang="so" dir="ltr">
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: LANG_INIT_SCRIPT }} />
       </head>
       <body
         className={`${inter.variable} ${manrope.variable} antialiased min-h-screen relative`}
         style={{ fontFamily: "var(--font-inter), sans-serif" }}
       >
         <ThemeProvider>
-          <div className="site-bg">
-            <div className="corner-dots corner-dots-tr"></div>
-            <div className="corner-dots corner-dots-bl"></div>
-          </div>
-          <RainBackground />
+          <LanguageProvider>
+            <div className="site-bg">
+              <div className="corner-dots corner-dots-tr"></div>
+              <div className="corner-dots corner-dots-bl"></div>
+            </div>
+            <RainBackground />
 
-          <Header />
-          {children}
-          <Footer />
-          <WhatsAppWidget />
-          <TutorialButton />
-          <XirfadleAIWidget />
+            <Header />
+            {children}
+            <Footer />
+            <WhatsAppWidget />
+            <TutorialButton />
+            <XirfadleAIWidget />
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

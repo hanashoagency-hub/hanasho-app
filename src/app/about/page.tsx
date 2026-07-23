@@ -86,6 +86,34 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* ================= MEET THE FOUNDER ================= */}
+      <section className="py-20 px-6 relative z-10 border-y border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="mx-auto max-w-5xl">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            <div className="w-full md:w-1/3">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-[var(--brand-primary)] shadow-2xl">
+                <img 
+                  src="/assets/founder.jpeg" 
+                  alt="Founder of HanHub" 
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-2/3">
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-[var(--text-primary)] mb-4">
+                Meet the Founder
+              </h2>
+              <p className="text-[var(--text-secondary)] leading-relaxed text-lg mb-6">
+                HanHub was founded with a singular vision: to empower the Somali youth with the digital skills necessary to thrive in a globalized world. After seeing the immense potential of our people being hindered by language barriers and a lack of structured, accessible education, HanHub was created as a bridge to those opportunities.
+              </p>
+              <p className="text-[var(--text-secondary)] leading-relaxed text-lg">
+                "Our goal is not just to teach skills, but to build a community of innovators who will shape the future of the digital economy."
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ================= MISSION & VISION ================= */}
       <section className="py-20 px-6 relative border-y border-[var(--border-color)] bg-[var(--bg-secondary)]">
         <div className="mx-auto max-w-7xl grid gap-6 md:grid-cols-2">

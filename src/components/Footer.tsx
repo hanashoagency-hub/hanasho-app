@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function Footer() {
   const pathname = usePathname();
+  const { dict } = useLanguage();
   if (pathname?.startsWith("/dashboard")) return null;
 
   return (
@@ -21,27 +23,26 @@ export default function Footer() {
               />
             </Link>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Akademiyada ugu horeysa ee Soomaaliyeed oo ku barta dhallinyarada
-              xirfadaha digital-ka iyo dakhliga online.
+              {dict.footer.tagline}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
             <h4 className="font-heading font-bold text-[var(--text-primary)] mb-4 text-sm uppercase tracking-widest">
-              Xiriiriyayaal
+              {dict.footer.quickLinks}
             </h4>
             <ul className="space-y-3">
               {[
-                { href: "/about", label: "Annaga" },
-                { href: "/services", label: "Services & Portfolio" },
-                { href: "/courses", label: "Koorsooyinka" },
-                { href: "/ai-tools", label: "AI Tools" },
-                { href: "/blogs", label: "Blog" },
-                { href: "/marketplace", label: "Marketplace" },
-                { href: "/community", label: "Community" },
+                { href: "/about", label: dict.nav.about },
+                { href: "/services", label: dict.nav.services },
+                { href: "/courses", label: dict.nav.courses },
+                { href: "/ai-tools", label: dict.nav.aiTools },
+                { href: "/blogs", label: dict.nav.blog },
+                { href: "/marketplace", label: dict.nav.marketplace },
+                { href: "/community", label: dict.nav.community },
                 { href: "/leaderboard", label: "Leaderboard" },
-                { href: "/dashboard", label: "Dashboard" },
+                { href: "/dashboard", label: dict.nav.dashboard },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -58,7 +59,7 @@ export default function Footer() {
           {/* Courses */}
           <div>
             <h4 className="font-heading font-bold text-[var(--text-primary)] mb-4 text-sm uppercase tracking-widest">
-              Koorsooyinka
+              {dict.footer.coursesHeading}
             </h4>
             <ul className="space-y-3">
               {[
@@ -83,7 +84,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h4 className="font-heading font-bold text-[var(--text-primary)] mb-4 text-sm uppercase tracking-widest">
-              Nala Soo Xiriir
+              {dict.footer.contactHeading}
             </h4>
             <ul className="space-y-3 text-sm text-[var(--text-secondary)]">
               <li>📧 info@hanhub.so</li>
@@ -96,7 +97,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-[var(--border-color)] pt-8 md:flex-row">
           <p className="text-xs text-[var(--text-secondary)]">
-            © {new Date().getFullYear()} Hanhub.so. Xuquuqda oo dhan way ilaalisan yihiin.
+            © {new Date().getFullYear()} Hanhub.so. {dict.footer.rights}
           </p>
           <div className="flex gap-6">
             {["Twitter", "Instagram", "YouTube", "TikTok"].map((social) => (

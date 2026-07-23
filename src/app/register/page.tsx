@@ -5,6 +5,7 @@ import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -15,6 +16,7 @@ export default function RegisterPage() {
 
   const router = useRouter();
   const supabase = createClient();
+  const { dict } = useLanguage();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -75,8 +77,8 @@ export default function RegisterPage() {
           <Link href="/" className="inline-block mb-6">
             <img src="/assets/logo.png" alt="HanHub" className="h-10 w-auto object-contain mx-auto" />
           </Link>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 font-heading">Join HanHub</h1>
-          <p className="text-[var(--text-secondary)]">Create an account to start your journey.</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 font-heading">{dict.auth.joinHanhub}</h1>
+          <p className="text-[var(--text-secondary)]">{dict.auth.registerSubtitle}</p>
         </div>
 
         <div className="premium-card">

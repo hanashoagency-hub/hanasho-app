@@ -5,6 +5,7 @@ import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
   const supabase = createClient();
+  const { dict } = useLanguage();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -64,8 +66,8 @@ export default function LoginPage() {
           <Link href="/" className="inline-block mb-6">
             <img src="/assets/logo.png" alt="HanHub" className="h-10 w-auto object-contain mx-auto" />
           </Link>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 font-heading">Welcome Back</h1>
-          <p className="text-[var(--text-secondary)]">Enter your credentials to access your account.</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 font-heading">{dict.auth.welcomeBack}</h1>
+          <p className="text-[var(--text-secondary)]">{dict.auth.loginSubtitle}</p>
         </div>
 
         <div className="premium-card">

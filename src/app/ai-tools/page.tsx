@@ -36,7 +36,21 @@ function ToolBadges({ item }: { item: Tool | ExternalListing }) {
   );
 }
 
+const categoryIcons: Record<string, React.ElementType> = {
+  "Artificial Intelligence": Flame,
+  "Productivity": Server,
+  "Writing": Sparkles,
+  "Image Generation": Search,
+  "Video Generation": Flame,
+  "Coding AI": Server,
+  "Marketing AI": Sparkles,
+  "SEO Tools": Search,
+};
+
 function ToolCard({ item }: { item: Tool | ExternalListing }) {
+  // Use category icon if it exists in our map, otherwise fallback to a default
+  const IconComponent = "category" in item ? categoryIcons[item.category as string] || ExternalLink : ExternalLink;
+
   return (
     <a
       href={item.url}
@@ -45,10 +59,15 @@ function ToolCard({ item }: { item: Tool | ExternalListing }) {
       className="premium-card relative group flex flex-col"
     >
       <ToolBadges item={item} />
-      <h3 className="font-heading text-lg font-bold text-[var(--text-primary)] mb-2 pr-16 group-hover:text-[var(--brand-primary)] transition-colors">
-        {item.name}
-      </h3>
-      <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6 flex-1">
+      <div className="flex items-center gap-3 mb-2 pr-16">
+        <div className="w-8 h-8 rounded-[8px] bg-[var(--bg-primary)] border border-[var(--border-color)] flex items-center justify-center flex-shrink-0 group-hover:border-[var(--brand-primary)] transition-colors">
+          <IconComponent className="w-4 h-4 text-[var(--brand-primary)]" />
+        </div>
+        <h3 className="font-heading text-lg font-bold text-[var(--text-primary)] group-hover:text-[var(--brand-primary)] transition-colors">
+          {item.name}
+        </h3>
+      </div>
+      <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6 flex-1 mt-1">
         {item.description}
       </p>
       <div className="flex items-center justify-between">

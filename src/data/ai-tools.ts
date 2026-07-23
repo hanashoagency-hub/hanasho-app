@@ -16,6 +16,7 @@ export interface Tool {
   tags: string[];
   isNew?: boolean;
   isTrending?: boolean;
+  icon?: string;
 }
 
 export const categories: ToolCategory[] = [

@@ -3,59 +3,32 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon } from "lucide-react";
+import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon, Search, Home, Info, Briefcase, BookOpen, Wrench, FileText, Store, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useTheme } from "@/components/ThemeProvider";
+import { useLanguage, type Lang } from "@/i18n/LanguageProvider";
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
   const { theme, toggleTheme } = useTheme();
+  const { lang, setLang, dict } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState("EN");
-  
+
   // Auth state
   const [user, setUser] = useState<any>(null);
   const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
-    // Google Translate Initialization
-    if (!document.getElementById("google-translate-script")) {
-      const addScript = document.createElement("script");
-      addScript.id = "google-translate-script";
-      addScript.setAttribute(
-        "src",
-        "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-      );
-      document.body.appendChild(addScript);
-      
-      // @ts-ignore
-      window.googleTranslateElementInit = () => {
-        // @ts-ignore
-        new window.google.translate.TranslateElement(
-          { pageLanguage: "so", includedLanguages: "en,so,ar", autoDisplay: false },
-          "google_translate_element"
-        );
-      };
-    }
-
-    // Set UI language from cookie
-    const match = document.cookie.match(/googtrans=\/so\/(en|so|ar)/);
-    if (match) {
-      setCurrentLang(match[1].toUpperCase());
-    }
-
-    // Check auth session
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
     };
     checkUser();
 
-    // Listen to auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
     });
@@ -73,10 +46,10 @@ export default function Header() {
     router.refresh();
   };
 
-  const languages = [
-    { code: "EN", label: "English" },
-    { code: "SO", label: "Somali" },
-    { code: "AR", label: "Arabic" },
+  const languages: { code: Lang; label: string }[] = [
+    { code: "so", label: "Soomaali" },
+    { code: "en", label: "English" },
+    { code: "ar", label: "العربية" },
   ];
 
   useEffect(() => {
@@ -86,29 +59,23 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { href: "/about", label: "Annaga" },
-    { href: "/services", label: "Services" },
-    { href: "/courses", label: "Courses" },
-    { href: "/ai-tools", label: "AI Tools" },
-    { href: "/blogs", label: "Blog" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/community", label: "Community" },
+    { href: "/#about", label: dict.nav.about, icon: Info },
+    { href: "/services", label: dict.nav.services, icon: Briefcase },
+    { href: "/courses", label: dict.nav.courses, icon: BookOpen },
+    { href: "/ai-tools", label: dict.nav.aiTools, icon: Wrench },
+    { href: "/blogs", label: dict.nav.blog, icon: FileText },
+    { href: "/marketplace", label: dict.nav.marketplace, icon: Store },
+    { href: "/community", label: dict.nav.community, icon: Users },
   ];
 
-  const changeLanguage = (langCode: string) => {
-    setCurrentLang(langCode);
+  const changeLanguage = (code: Lang) => {
+    setLang(code);
     setLangOpen(false);
-    let gCode = "so";
-    if (langCode === "EN") gCode = "en";
-    if (langCode === "AR") gCode = "ar";
-    if (langCode === "SO") gCode = "so";
-    
-    document.cookie = `googtrans=/so/${gCode}; path=/`;
-    document.cookie = `googtrans=/so/${gCode}; domain=${window.location.hostname}; path=/`;
-    window.location.reload();
   };
 
   if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/portal-live")) return null;
+
+  const currentLogo = theme === "light" ? "/assets/logo-light.png" : "/assets/logo.png";
 
   return (
     <>
@@ -119,17 +86,19 @@ export default function Header() {
             : "bg-transparent py-5"
         }`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6">
+        {/* We use flex-row-reverse on mobile so the logo goes to the right, and the menu controls to the left */}
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 flex-row-reverse md:flex-row">
+          
           <Link href="/" className="flex items-center group">
             <img
-              src="/assets/logo.png"
+              src={currentLogo}
               alt="HanHub"
-              className="h-16 md:h-20 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+              className="h-12 md:h-16 w-auto object-contain transition-all duration-300 group-hover:scale-105"
             />
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -141,28 +110,28 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Auth Button */}
+          {/* Desktop Auth / Controls */}
           <div className="hidden md:flex items-center gap-4">
             {/* Lang Switcher */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setLangOpen(!langOpen)}
                 className="flex items-center gap-1 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mr-2"
               >
                 <Globe className="w-4 h-4" />
-                {currentLang}
+                {lang.toUpperCase()}
                 <ChevronDown className="w-3 h-3 opacity-50" />
               </button>
-              
+
               {langOpen && (
                 <div className="absolute top-full right-0 mt-4 w-32 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl shadow-xl py-2 flex flex-col z-50 overflow-hidden">
-                  {languages.map(lang => (
+                  {languages.map((l) => (
                     <button
-                      key={lang.code}
-                      onClick={() => changeLanguage(lang.code)}
-                      className={`px-4 py-2 text-sm text-left transition-colors hover:bg-[var(--border-color)] ${currentLang === lang.code ? 'text-[var(--brand-primary)] font-bold' : 'text-[var(--text-secondary)]'}`}
+                      key={l.code}
+                      onClick={() => changeLanguage(l.code)}
+                      className={`px-4 py-2 text-sm text-left transition-colors hover:bg-[var(--border-color)] ${lang === l.code ? 'text-[var(--brand-primary)] font-bold' : 'text-[var(--text-secondary)]'}`}
                     >
-                      {lang.label}
+                      {l.label}
                     </button>
                   ))}
                 </div>
@@ -183,9 +152,6 @@ export default function Header() {
 
             <Link href="/checkout" className="relative w-10 h-10 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center justify-center hover:bg-[var(--border-color)] transition-all duration-300">
               <ShoppingCart className="w-4 h-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--brand-primary)] text-[10px] font-bold text-[var(--on-brand)]">
-                0
-              </span>
             </Link>
 
             {user ? (
@@ -197,7 +163,7 @@ export default function Header() {
                   <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] flex items-center justify-center">
                     <User className="w-3.5 h-3.5 text-[var(--on-brand)]" />
                   </div>
-                  <span className="text-sm font-medium text-[var(--text-primary)]">Account</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">{dict.nav.account}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
                 </button>
 
@@ -212,13 +178,13 @@ export default function Header() {
                       onClick={() => setProfileOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--border-color)] transition-colors"
                     >
-                      <LayoutDashboard className="w-4 h-4" /> Dashboard
+                      <LayoutDashboard className="w-4 h-4" /> {dict.nav.dashboard}
                     </Link>
                     <button
                       onClick={handleSignOut}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left w-full"
                     >
-                      <LogOut className="w-4 h-4" /> Sign out
+                      <LogOut className="w-4 h-4" /> {dict.nav.signOut}
                     </button>
                   </div>
                 )}
@@ -229,20 +195,52 @@ export default function Header() {
                   href="/login"
                   className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
-                  Login
+                  {dict.nav.login}
                 </Link>
                 <Link
                   href="/register"
                   className="rounded-[16px] bg-[var(--brand-primary)] px-6 py-2.5 text-sm font-heading font-bold text-[var(--on-brand)] transition-transform hover:-translate-y-0.5"
                 >
-                  Sign Up
+                  {dict.nav.signup}
                 </Link>
               </>
             )}
           </div>
 
-          {/* Mobile Controls */}
-          <div className="flex items-center gap-3 md:hidden">
+          {/* Mobile Controls (Menu Left, Search/Translate Center) */}
+          <div className="flex md:hidden items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="flex text-[var(--text-primary)]"
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+            </button>
+            
+            <button onClick={() => setLangOpen(!langOpen)} className="w-9 h-9 flex items-center justify-center text-[var(--text-primary)] relative">
+              <Globe className="w-5 h-5" />
+              {langOpen && (
+                <div className="absolute top-full left-0 mt-4 w-32 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl shadow-xl py-2 flex flex-col z-50 overflow-hidden">
+                  {languages.map((l) => (
+                    <button
+                      key={l.code}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        changeLanguage(l.code);
+                      }}
+                      className={`px-4 py-2 text-sm text-left transition-colors hover:bg-[var(--border-color)] ${lang === l.code ? 'text-[var(--brand-primary)] font-bold' : 'text-[var(--text-secondary)]'}`}
+                    >
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </button>
+
+            <Link href="/courses" className="w-9 h-9 flex items-center justify-center text-[var(--text-primary)]">
+              <Search className="w-5 h-5" />
+            </Link>
+
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -254,48 +252,45 @@ export default function Header() {
                 <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
               )}
             </button>
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="flex text-[var(--text-primary)]"
-              aria-label="Toggle menu"
-            >
-              {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
-            </button>
           </div>
         </div>
       </header>
 
       {/* Mobile Menu */}
       <div
-        className={`fixed inset-0 z-40 flex flex-col items-center justify-center gap-8 bg-[var(--bg-primary)] transition-all duration-300 md:hidden ${
+        className={`fixed inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-[var(--bg-primary)] transition-all duration-300 md:hidden ${
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={() => setMobileOpen(false)}
-            className="font-heading text-2xl font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--brand-primary)]"
-          >
-            {link.label}
-          </Link>
-        ))}
+        {navLinks.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 font-heading text-2xl font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--brand-primary)]"
+            >
+              <Icon className="w-6 h-6" />
+              {link.label}
+            </Link>
+          );
+        })}
 
         {user ? (
           <>
             <Link
               href="/dashboard"
               onClick={() => setMobileOpen(false)}
-              className="font-heading text-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="flex items-center gap-3 font-heading text-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mt-4"
             >
-              Dashboard
+              <LayoutDashboard className="w-5 h-5" /> {dict.nav.dashboard}
             </Link>
             <button
               onClick={() => { setMobileOpen(false); handleSignOut(); }}
-              className="mt-4 rounded-full bg-red-500/10 border border-red-500/20 px-8 py-3 font-heading font-semibold text-red-400"
+              className="mt-4 rounded-full bg-red-500/10 border border-red-500/20 px-8 py-3 font-heading font-semibold text-red-400 flex items-center gap-2"
             >
-              Sign Out
+              <LogOut className="w-4 h-4" /> {dict.nav.signOut}
             </button>
           </>
         ) : (
@@ -303,21 +298,20 @@ export default function Header() {
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}
-              className="font-heading text-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="font-heading text-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mt-4"
             >
-              Login
+              {dict.nav.login}
             </Link>
             <Link
               href="/register"
               onClick={() => setMobileOpen(false)}
               className="mt-4 rounded-[16px] bg-[var(--brand-primary)] px-8 py-3 font-heading font-bold text-[var(--on-brand)]"
             >
-              Sign Up
+              {dict.nav.signup}
             </Link>
           </>
         )}
       </div>
-      <div id="google_translate_element" style={{ display: "none" }}></div>
     </>
   );
 }

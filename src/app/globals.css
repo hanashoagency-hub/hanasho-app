@@ -23,6 +23,12 @@
     --rain-color: 200, 230, 210;
     --rain-opacity: 0.35;
 
+    /* Background Gradients */
+    --bg-gradient-top: #05180D;
+    --bg-gradient-bottom: #0B2014;
+    --bg-glow-center: rgba(16, 49, 38, 0.45);
+    --bg-vignette: rgba(3, 12, 7, 0.55);
+
     --radius-sm: 8px;
     --radius-md: 16px;
     --radius-lg: 20px;
@@ -43,6 +49,12 @@
     --border-color: #DDE3D2;
     --rain-color: 60, 90, 60;
     --rain-opacity: 0.18;
+
+    /* Background Gradients */
+    --bg-gradient-top: #FAFAF5;
+    --bg-gradient-bottom: #F1F2E8;
+    --bg-glow-center: rgba(255, 255, 255, 0.6);
+    --bg-vignette: rgba(200, 210, 190, 0.15);
   }
 
   html {
@@ -83,11 +95,11 @@
     /* Layered backgrounds: vignette + center glow + base gradient */
     background:
       /* Vignette — soft darkening at edges */
-      radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(3, 12, 7, 0.55) 100%),
+      radial-gradient(ellipse at 50% 50%, transparent 40%, var(--bg-vignette) 100%),
       /* Center radial glow — subtle illumination */
-      radial-gradient(ellipse at 50% 40%, rgba(16, 49, 38, 0.45) 0%, transparent 65%),
+      radial-gradient(ellipse at 50% 40%, var(--bg-glow-center) 0%, transparent 65%),
       /* Base gradient — top to bottom */
-      linear-gradient(180deg, #05180D 0%, #0B2014 100%);
+      linear-gradient(180deg, var(--bg-gradient-top) 0%, var(--bg-gradient-bottom) 100%);
   }
 
   /* Grid overlay */

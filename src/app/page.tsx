@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { 
-  ArrowRight, Code, Terminal, Brain, TrendingUp, 
-  CheckCircle, ChevronDown, MessageSquare, Layout 
+import {
+  ArrowRight, Code, Terminal, Brain, TrendingUp,
+  CheckCircle, ChevronDown, MessageSquare, Layout
 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+  const { dict } = useLanguage();
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
@@ -19,15 +21,14 @@ export default function Home() {
       {/* ================= HERO SECTION ================= */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 flex flex-col items-center justify-center text-center">
         <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tight text-[var(--text-primary)] max-w-5xl leading-tight text-center mx-auto mb-6 relative z-10">
-          <span className="hero-reveal-line block">HANKAAGA HALKA</span>
+          <span className="hero-reveal-line block">{dict.home.heroLine1}</span>
           <span className="hero-reveal-line hero-reveal-line-2 block text-[var(--brand-primary)]">
-            UU KA BILOWDO
+            {dict.home.heroLine2}
           </span>
         </h1>
 
         <p className="mt-8 max-w-2xl text-lg text-[var(--text-secondary)] md:text-xl leading-relaxed">
-          Baro xirfadaha ugu baahida badan aduunka. Laga soo bilaabo AI iyo Web3 ilaa 
-          Digital Marketing iyo Freelancing, dhamaantoodna waxaa lagu dhigaa Af-Soomaali.
+          {dict.home.heroSubtitle}
         </p>
 
         <div className="mt-12 flex flex-col gap-4 sm:flex-row">
@@ -35,13 +36,13 @@ export default function Home() {
             href="/register"
             className="btn-primary"
           >
-            Bilow Maanta <ArrowRight className="h-5 w-5" />
+            {dict.home.ctaStart} <ArrowRight className="h-5 w-5" />
           </Link>
           <Link
             href="/courses"
             className="btn-secondary"
           >
-            Arag Koorsooyinka
+            {dict.home.ctaCourses}
           </Link>
         </div>
       </section>
@@ -51,19 +52,19 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 grid grid-cols-2 gap-8 md:grid-cols-4 divide-x divide-[var(--border-color)] text-center">
           <div>
             <h3 className="text-4xl font-extrabold text-[var(--text-primary)] mb-2 font-heading tracking-tight">5,000+</h3>
-            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">Ardayda Diiwaangashan</p>
+            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">{dict.home.statsStudents}</p>
           </div>
           <div>
             <h3 className="text-4xl font-extrabold text-[var(--text-primary)] mb-2 font-heading tracking-tight">12+</h3>
-            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">Koorsooyin Premium Ah</p>
+            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">{dict.home.statsCourses}</p>
           </div>
           <div>
             <h3 className="text-4xl font-extrabold text-[var(--text-primary)] mb-2 font-heading tracking-tight">24/7</h3>
-            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">Caawimaad AI Ah</p>
+            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">{dict.home.statsSupport}</p>
           </div>
           <div>
             <h3 className="text-4xl font-extrabold text-[var(--text-primary)] mb-2 font-heading tracking-tight">94%</h3>
-            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">Heerka Guusha</p>
+            <p className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest">{dict.home.statsSuccess}</p>
           </div>
         </div>
       </section>
@@ -73,11 +74,10 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-5xl mb-4">
-              Baro Xirfadaha Berito
+              {dict.home.coursesTitle}
             </h2>
             <p className="text-[var(--text-secondary)] max-w-2xl mx-auto text-lg">
-              Koorsooyinkeena waxaa loo qaabeeyey inay si toos ah kaaga caawiyaan sidii aad 
-              dakhli online ah u abuuri lahayd adigoo adeegsanaya teknoolojiyadda cusub.
+              {dict.home.coursesSubtitle}
             </p>
           </div>
 
@@ -117,7 +117,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-5xl mb-4">
-              Adeegeena (Our Services)
+              {dict.home.servicesTitle}
             </h2>
             <p className="text-[var(--text-secondary)] max-w-2xl mx-auto text-lg">
               Waxaan dhisnaa nidaamyo casri ah oo kor u qaadaya ganacsigaaga adigoo adeegsanaya teknoolojiyaddii ugu dambeysay.
@@ -151,7 +151,7 @@ export default function Home() {
       <section className="py-24 px-6 relative">
         <div className="mx-auto max-w-4xl text-center mb-16">
           <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-5xl mb-4">
-            Khariidadda Guushaada
+            {dict.home.roadmapTitle}
           </h2>
           <p className="text-[var(--text-secondary)] text-lg">
             Hage tillaabo-tillaabo ah oo ku geynaya heerka ugu sarreeya ee xirfadaha digital-ka.
@@ -188,7 +188,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center gap-16 relative z-10">
           <div className="md:w-1/2 text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] px-4 py-2 mb-6">
-              <span className="text-sm font-bold text-[var(--brand-primary)] uppercase tracking-wider">Xirfadle AI Barahaaga</span>
+              <span className="text-sm font-bold text-[var(--brand-primary)] uppercase tracking-wider">{dict.home.aiShowcaseBadge}</span>
             </div>
             <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-5xl mb-6 leading-tight">
               Macalin Khaas Ah Oo Kula Jooga Mar Kasta
@@ -250,7 +250,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-5xl mb-4">
-              Ardaydeenu Waxay Dhiheen
+              {dict.home.testimonialsTitle}
             </h2>
             <p className="text-[var(--text-secondary)] max-w-2xl mx-auto text-lg">
               Ma nihin kaliya platform waxbarasho, waxaan nahay bulsho is caawisa oo 
@@ -286,7 +286,7 @@ export default function Home() {
         <div className="mx-auto max-w-3xl">
           <div className="text-center mb-12">
             <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-4xl mb-4">
-              Su'aalaha Inta Badan La Isweydiiyo
+              {dict.home.faqTitle}
             </h2>
           </div>
 
@@ -323,21 +323,20 @@ export default function Home() {
       <section className="py-24 px-6 relative overflow-hidden bg-[var(--bg-secondary)] border-y border-[var(--border-color)]">
         <div className="mx-auto max-w-5xl text-center">
           <h2 className="font-heading text-4xl font-extrabold text-[var(--text-primary)] md:text-6xl mb-6">
-            Diyaar Ma U Tahay Inaad <br className="hidden md:block" />
+            {dict.home.ctaBottomTitle} <br className="hidden md:block" />
             <span className="text-[var(--brand-primary)]">
-              Beddesho Noloshaada?
+              {dict.home.ctaBottomHighlight}
             </span>
           </h2>
           <p className="text-lg text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto">
-            Ku biir kumannaan dhalinyaro Soomaaliyeed ah oo baranaya xirfadaha 
-            mustaqbalka, abuurayana ilo dakhli oo cusub.
+            {dict.home.ctaBottomSubtitle}
           </p>
-          
+
           <Link
             href="/register"
             className="btn-primary inline-flex"
           >
-            Is Diiwaangeli Hadda <ArrowRight className="h-5 w-5" />
+            {dict.home.ctaBottomButton} <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </section>
@@ -354,7 +353,7 @@ export default function Home() {
           </div>
           <div className="md:w-1/2 text-center md:text-left">
             <span className="inline-block px-4 py-2 mb-6 rounded-full bg-[var(--bg-secondary)] text-[var(--brand-primary)] text-xs font-bold tracking-wider uppercase border border-[var(--border-color)]">
-              Founder & CEO
+              {dict.home.founderTitle}
             </span>
             <h2 className="font-heading text-3xl font-bold text-[var(--text-primary)] md:text-5xl mb-4">
               BUZURI
