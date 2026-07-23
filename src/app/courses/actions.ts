@@ -195,3 +195,52 @@ async function ensureCertificate(
 
   return created;
 }
+
+export async function submitCourseReviewAction(courseId: string, rating: number, reviewText: string) {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "You must be logged in to leave a review." };
+    }
+
+    // Verify the user has purchased the course
+    const { data: purchase } = await supabase
+      .from('purchases')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('course_id', courseId)
+      .single();
+
+    if (!purchase) {
+      return { success: false, error: "You can only review courses you have purchased." };
+    }
+
+    const { error } = await supabase
+      .from('course_reviews')
+      .insert({
+        course_id: courseId,
+        user_id: user.id,
+        rating,
+        review_text: reviewText
+      });
+
+    if (error) {
+      // If it's a unique constraint violation, they already reviewed it
+      if (error.code === '23505') {
+        return { success: false, error: "You have already reviewed this course." };
+      }
+      console.error("Error submitting review:", error);
+      return { success: false, error: "Failed to submit review." };
+    }
+
+    revalidatePath(`/courses/${courseId}`);
+    revalidatePath('/courses');
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+

@@ -6,12 +6,14 @@ import {
   PlayCircle,
   BookOpen,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  Star
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function CoursesCatalogPage() {
   const [courses, setCourses] = useState<any[]>([]);
+  const [reviewsStats, setReviewsStats] = useState<Record<string, { avg: string, count: number }>>({});
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -24,7 +26,35 @@ export default function CoursesCatalogPage() {
         .eq("is_published", true)
         .order("created_at", { ascending: false });
         
-      setCourses(data || []);
+      if (data && data.length > 0) {
+        setCourses(data);
+        
+        // Fetch reviews for these courses to calculate average ratings
+        const courseIds = data.map(c => c.id);
+        const { data: reviewsData } = await supabase
+          .from("course_reviews")
+          .select("course_id, rating")
+          .in("course_id", courseIds);
+          
+        if (reviewsData) {
+          const stats: Record<string, { totalRating: number, count: number }> = {};
+          reviewsData.forEach(r => {
+            if (!stats[r.course_id]) stats[r.course_id] = { totalRating: 0, count: 0 };
+            stats[r.course_id].totalRating += r.rating;
+            stats[r.course_id].count += 1;
+          });
+          
+          const finalStats: Record<string, { avg: string, count: number }> = {};
+          Object.keys(stats).forEach(courseId => {
+            finalStats[courseId] = {
+              avg: (stats[courseId].totalRating / stats[courseId].count).toFixed(1),
+              count: stats[courseId].count
+            };
+          });
+          setReviewsStats(finalStats);
+        }
+      }
+      
       setLoading(false);
     };
 
@@ -60,7 +90,9 @@ export default function CoursesCatalogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {courses.map((course) => (
+            {courses.map((course) => {
+              const stats = reviewsStats[course.id];
+              return (
               <div 
                 key={course.id}
                 className="premium-card !p-0 flex flex-col overflow-hidden group"
@@ -90,7 +122,14 @@ export default function CoursesCatalogPage() {
 
                 {/* Content */}
                 <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-3 line-clamp-2 leading-snug">{course.title}</h3>
+                  <h3 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-2 line-clamp-2 leading-snug">{course.title}</h3>
+                  
+                  <div className="flex items-center text-sm mb-4">
+                    <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                    <span className="text-[var(--text-primary)] font-bold mr-1">{stats?.avg || "New"}</span>
+                    <span className="text-[var(--text-secondary)]">({stats?.count || 0} reviews)</span>
+                  </div>
+
                   <p className="text-sm text-[var(--text-secondary)] mb-8 line-clamp-3 flex-grow leading-relaxed">{course.description}</p>
                   
                   <Link 
@@ -101,7 +140,7 @@ export default function CoursesCatalogPage() {
                   </Link>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

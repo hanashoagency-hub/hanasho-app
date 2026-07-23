@@ -1,13 +1,34 @@
 import React from "react";
-import { Settings, Shield, Bell } from "lucide-react";
+import { Shield, Bell } from "lucide-react";
+import ProfileSettingsForm from "./ProfileSettingsForm";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("id", user.id)
+    .single();
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="font-heading text-3xl font-bold text-[var(--text-primary)] mb-2">Account Settings</h1>
         <p className="text-[var(--text-secondary)]">Manage your profile and preferences.</p>
       </div>
+
+      <ProfileSettingsForm 
+        initialFullName={profile?.full_name || ""} 
+        initialAvatarUrl={profile?.avatar_url || ""} 
+      />
 
       <div className="space-y-6">
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-[20px] p-6">
@@ -43,3 +64,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

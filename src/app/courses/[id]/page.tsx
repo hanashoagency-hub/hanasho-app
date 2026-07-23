@@ -15,11 +15,13 @@ import {
   FileText,
   MessageCircle,
   ShoppingCart,
-  Loader2
+  Loader2,
+  Star
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
 import Link from 'next/link';
+import CourseReviewSection from './CourseReviewSection';
 
 export default function CoursePage() {
   const params = useParams();
@@ -43,6 +45,10 @@ export default function CoursePage() {
   const [totalLessons, setTotalLessons] = useState(0);
   const [savingProgress, setSavingProgress] = useState(false);
   const [certificate, setCertificate] = useState<{ id: string; certificate_number: string } | null>(null);
+  
+  // Reviews state
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -70,7 +76,24 @@ export default function CoursePage() {
         }
       }
 
-      // 4. Check Purchase Status + load progress & certificate
+      // 4. Fetch Reviews
+      const { data: reviewData } = await supabase
+        .from('course_reviews')
+        .select(`
+          id, rating, review_text, created_at, user_id,
+          profiles ( full_name, avatar_url )
+        `)
+        .eq('course_id', courseId)
+        .order('created_at', { ascending: false });
+        
+      if (reviewData) {
+        setReviews(reviewData);
+        if (user) {
+          setHasReviewed(reviewData.some(r => r.user_id === user.id));
+        }
+      }
+
+      // 5. Check Purchase Status + load progress & certificate
       if (user) {
         const { data: purchase } = await supabase.from('purchases').select('*').eq('user_id', user.id).eq('course_id', courseId).single();
         if (purchase) {
@@ -148,6 +171,10 @@ export default function CoursePage() {
   const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
   const currentLessonDone = currentLessonId ? completedIds.has(currentLessonId) : false;
 
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+    : "New";
+
   if (loading) return <div className="min-h-screen bg-transparent flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--text-secondary)]" /></div>;
   if (!course) return <div className="min-h-screen bg-transparent flex items-center justify-center text-[var(--text-primary)]">Course not found.</div>;
 
@@ -176,7 +203,9 @@ export default function CoursePage() {
         <div className="p-6 border-b border-[var(--border-color)] md:mt-24">
           <Link href="/courses" className="text-sm text-[var(--text-secondary)] hover:text-[var(--brand-primary)] mb-4 block font-bold transition-colors">← Back to Courses</Link>
           <h2 className="text-xl font-bold mb-3 tracking-tight font-heading">{course.title}</h2>
-          <div className="flex items-center text-sm text-[var(--text-secondary)] space-x-4">
+          
+          <div className="flex items-center text-sm text-[var(--text-secondary)] space-x-4 mb-2">
+            <span className="flex items-center text-yellow-400 font-bold"><Star className="w-4 h-4 mr-1 fill-current" /> {averageRating}</span>
             <span className="flex items-center"><BookOpen className="w-4 h-4 mr-1.5" /> {modules.length} Modules</span>
           </div>
 
@@ -368,6 +397,14 @@ export default function CoursePage() {
                   <p>{currentLessonDesc || course.description}</p>
                 </div>
               </div>
+              
+              {/* REVIEWS SECTION */}
+              <CourseReviewSection 
+                courseId={courseId} 
+                hasPurchased={hasPurchased} 
+                reviews={reviews} 
+                hasReviewed={hasReviewed} 
+              />
             </div>
 
             {/* Right Column - Support Card */}
@@ -393,3 +430,4 @@ export default function CoursePage() {
     </div>
   );
 }
+
