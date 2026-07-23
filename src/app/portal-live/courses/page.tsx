@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, BookOpen, ChevronRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { createCourseAction, updateCourseAction, deleteCourseAction, togglePublishAction } from "../actions";
+import { createCourseAction, updateCourseAction, deleteCourseAction, togglePublishAction, getAdminCoursesAction } from "../actions";
 
 interface Course {
   id: string;
@@ -54,8 +54,10 @@ export default function AdminCoursesPage() {
   }, [form, editingCourse]);
 
   const fetchCourses = async () => {
-    const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: false });
-    setCourses(data || []);
+    const res = await getAdminCoursesAction();
+    if (res.success) {
+      setCourses(res.data as Course[]);
+    }
     setLoading(false);
   };
 

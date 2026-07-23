@@ -180,3 +180,63 @@ export async function deleteLessonAction(id: string, courseId: string) {
     return { success: false, error: error.message };
   }
 }
+
+export async function getAdminCoursesAction() {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("courses")
+      .select("*")
+      .order("created_at", { ascending: false });
+      
+    if (error) throw new Error(error.message);
+    return { success: true, data: data || [] };
+  } catch (error: any) {
+    console.error("Admin Fetch Courses Error:", error);
+    return { success: false, data: [] };
+  }
+}
+
+export async function getAdminModulesWithLessonsAction(courseId: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    
+    // Fetch course
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from("courses")
+      .select("title")
+      .eq("id", courseId)
+      .single();
+      
+    if (courseError) throw new Error("Course fetch error: " + courseError.message);
+
+    // Fetch modules
+    const { data: mods, error: modError } = await supabaseAdmin
+      .from("modules")
+      .select("*")
+      .eq("course_id", courseId)
+      .order("sort_order", { ascending: true });
+      
+    if (modError) throw new Error("Modules fetch error: " + modError.message);
+
+    // Fetch lessons for these modules
+    const modulesWithLessons = [];
+    for (const mod of mods || []) {
+      const { data: lessons } = await supabaseAdmin
+        .from("lessons")
+        .select("*")
+        .eq("module_id", mod.id)
+        .order("sort_order", { ascending: true });
+      modulesWithLessons.push({ ...mod, lessons: lessons || [] });
+    }
+
+    return { 
+      success: true, 
+      courseTitle: course?.title || "", 
+      modules: modulesWithLessons 
+    };
+  } catch (error: any) {
+    console.error("Admin Fetch Modules Error:", error);
+    return { success: false, courseTitle: "", modules: [] };
+  }
+}

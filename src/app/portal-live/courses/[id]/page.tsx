@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Plus, Trash2, GripVertical, Play, ChevronDown, ChevronRight, Loader2, ArrowLeft, Edit, Check, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { createModuleAction, deleteModuleAction, createLessonAction, deleteLessonAction } from "../../actions";
+import { createModuleAction, deleteModuleAction, createLessonAction, deleteLessonAction, getAdminModulesWithLessonsAction } from "../../actions";
 
 interface Module {
   id: string;
@@ -39,27 +39,11 @@ export default function CourseBuilderPage() {
   const supabase = createClient();
 
   const fetchData = async () => {
-    // Fetch course
-    const { data: course } = await supabase.from("courses").select("title").eq("id", courseId).single();
-    if (course) setCourseTitle(course.title);
-
-    // Fetch modules with lessons
-    const { data: mods } = await supabase
-      .from("modules")
-      .select("*")
-      .eq("course_id", courseId)
-      .order("sort_order", { ascending: true });
-
-    const modulesWithLessons: Module[] = [];
-    for (const mod of mods || []) {
-      const { data: lessons } = await supabase
-        .from("lessons")
-        .select("*")
-        .eq("module_id", mod.id)
-        .order("sort_order", { ascending: true });
-      modulesWithLessons.push({ ...mod, lessons: lessons || [] });
+    const res = await getAdminModulesWithLessonsAction(courseId);
+    if (res.success) {
+      setCourseTitle(res.courseTitle);
+      setModules(res.modules as Module[]);
     }
-    setModules(modulesWithLessons);
     setLoading(false);
   };
 
