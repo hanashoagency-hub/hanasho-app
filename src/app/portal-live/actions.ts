@@ -275,6 +275,7 @@ export async function getPublicCourseDetailsAction(courseId: string) {
     // Fetch modules
     const { data: mods } = await supabaseAdmin
       .from("modules")
+      .select("*")
       .eq("course_id", courseId)
       .order("sort_order", { ascending: true });
 
@@ -313,26 +314,5 @@ export async function getCheckoutItemAction(table: string, id: string) {
   } catch (error: any) {
     console.error("Checkout Item Fetch Error:", error);
     return { success: false, item: null };
-  }
-}
-
-    // Fetch lessons for these modules
-    const modulesWithLessons = [];
-    for (const mod of mods || []) {
-      const { data: lessons } = await supabaseAdmin
-        .from("lessons")
-        .select("*")
-        .eq("module_id", mod.id)
-        .order("sort_order", { ascending: true });
-      modulesWithLessons.push({ ...mod, lessons: lessons || [] });
-    }
-
-    return { 
-      success: true, 
-      course, 
-      modules: modulesWithLessons 
-    };
-  } catch (error: any) {
-    return { success: false, course: null, modules: [] };
   }
 }

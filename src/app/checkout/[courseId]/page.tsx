@@ -38,17 +38,23 @@ export default function CheckoutPage() {
       if (itemType === "diploma") table = "diplomas";
       if (itemType === "zoom") table = "zoom_classes";
 
-      const res = await getCheckoutItemAction(table, itemId);
-      if (res.success && res.item) {
-        const data = res.item;
-        // Adjust price based on tier if it's a diploma
-        if (itemType === "diploma") {
-          const tier = searchParams.get("tier");
-          if (tier === "slow") data.price = data.price_slow;
-          else if (tier === "speedy") data.price = data.price_speedy;
-          else if (tier === "onetime") data.price = data.price_onetime;
+      try {
+        const res = await getCheckoutItemAction(table, itemId);
+        if (res.success && res.item) {
+          const data = res.item;
+          // Adjust price based on tier if it's a diploma
+          if (itemType === "diploma") {
+            const tier = searchParams.get("tier");
+            if (tier === "slow") data.price = data.price_slow;
+            else if (tier === "speedy") data.price = data.price_speedy;
+            else if (tier === "onetime") data.price = data.price_onetime;
+          }
+          setItem(data);
+        } else {
+          console.error("Checkout: item fetch failed", { table, itemId, res });
         }
-        setItem(data);
+      } catch (err) {
+        console.error("Checkout: exception fetching item", err);
       }
       setLoading(false);
     };
