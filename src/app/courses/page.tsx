@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
+import { getPublicCoursesAction } from "@/app/portal-live/actions";
+
 export default function CoursesCatalogPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [reviewsStats, setReviewsStats] = useState<Record<string, { avg: string, count: number }>>({});
@@ -19,18 +21,14 @@ export default function CoursesCatalogPage() {
 
   useEffect(() => {
     const fetchCourses = async () => {
-      // Fetch only published courses
-      const { data } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
+      // Fetch only published courses using server action to bypass RLS
+      const res = await getPublicCoursesAction();
         
-      if (data && data.length > 0) {
-        setCourses(data);
+      if (res.success && res.data && res.data.length > 0) {
+        setCourses(res.data);
         
         // Fetch reviews for these courses to calculate average ratings
-        const courseIds = data.map(c => c.id);
+        const courseIds = res.data.map(c => c.id);
         const { data: reviewsData } = await supabase
           .from("course_reviews")
           .select("course_id, rating")

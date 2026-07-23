@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
+import { getPublicCourseDetailsAction } from '@/app/portal-live/actions';
 import Link from 'next/link';
 import CourseReviewSection from './CourseReviewSection';
 
@@ -55,25 +56,22 @@ export default function CoursePage() {
       // 1. Fetch Auth state
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 2. Fetch Course Details
-      const { data: courseData } = await supabase.from('courses').select('*').eq('id', courseId).single();
-      if (courseData) setCourse(courseData);
-
-      // 3. Fetch Modules and Lessons
-      const { data: mods } = await supabase.from('modules').select('*').eq('course_id', courseId).order('sort_order');
-      let lessonCount = 0;
-      if (mods) {
-        const modulesWithLessons = await Promise.all(mods.map(async (mod) => {
-          const { data: lessons } = await supabase.from('lessons').select('*').eq('module_id', mod.id).order('sort_order');
-          return { ...mod, lessons: lessons || [] };
-        }));
-        setModules(modulesWithLessons);
-        lessonCount = modulesWithLessons.reduce((sum, m) => sum + m.lessons.length, 0);
+      // 2 & 3. Fetch Course Details, Modules, and Lessons
+      const res = await getPublicCourseDetailsAction(courseId);
+      if (res.success && res.course) {
+        setCourse(res.course);
+        setModules(res.modules);
+        
+        const lessonCount = res.modules.reduce((sum: number, m: any) => sum + m.lessons.length, 0);
         setTotalLessons(lessonCount);
 
-        if (modulesWithLessons.length > 0) {
-          setActiveModule(modulesWithLessons[0].id);
+        if (res.modules.length > 0) {
+          setActiveModule(res.modules[0].id);
         }
+      } else {
+        // If course is not found or not published
+        router.push("/courses");
+        return;
       }
 
       // 4. Fetch Reviews

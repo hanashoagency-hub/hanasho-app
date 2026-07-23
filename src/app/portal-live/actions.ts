@@ -197,6 +197,23 @@ export async function getAdminCoursesAction() {
   }
 }
 
+export async function getPublicCoursesAction() {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("courses")
+      .select("*")
+      .eq("is_published", true)
+      .order("created_at", { ascending: false });
+      
+    if (error) throw new Error(error.message);
+    return { success: true, data: data || [] };
+  } catch (error: any) {
+    console.error("Public Fetch Courses Error:", error);
+    return { success: false, data: [] };
+  }
+}
+
 export async function getAdminModulesWithLessonsAction(courseId: string) {
   try {
     const supabaseAdmin = getAdminClient();
@@ -238,5 +255,47 @@ export async function getAdminModulesWithLessonsAction(courseId: string) {
   } catch (error: any) {
     console.error("Admin Fetch Modules Error:", error);
     return { success: false, courseTitle: "", modules: [] };
+  }
+}
+
+export async function getPublicCourseDetailsAction(courseId: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    
+    // Fetch course
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from("courses")
+      .select("*")
+      .eq("id", courseId)
+      .eq("is_published", true)
+      .single();
+      
+    if (courseError || !course) throw new Error("Course fetch error");
+
+    // Fetch modules
+    const { data: mods } = await supabaseAdmin
+      .from("modules")
+      .select("*")
+      .eq("course_id", courseId)
+      .order("sort_order", { ascending: true });
+
+    // Fetch lessons for these modules
+    const modulesWithLessons = [];
+    for (const mod of mods || []) {
+      const { data: lessons } = await supabaseAdmin
+        .from("lessons")
+        .select("*")
+        .eq("module_id", mod.id)
+        .order("sort_order", { ascending: true });
+      modulesWithLessons.push({ ...mod, lessons: lessons || [] });
+    }
+
+    return { 
+      success: true, 
+      course, 
+      modules: modulesWithLessons 
+    };
+  } catch (error: any) {
+    return { success: false, course: null, modules: [] };
   }
 }
