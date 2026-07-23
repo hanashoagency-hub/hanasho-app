@@ -11,9 +11,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    
+    // Decode the JWT to check if the user accidentally pasted the anon key
+    let keyRole = 'unknown';
+    try {
+      if (serviceKey.includes('.')) {
+        const payload = JSON.parse(Buffer.from(serviceKey.split('.')[1], 'base64').toString());
+        keyRole = payload.role || 'unknown';
+      }
+    } catch (e) {
+      console.error("Could not parse JWT role", e);
+    }
+
+    if (keyRole === 'anon') {
+      return NextResponse.json({ 
+        success: false, 
+        error: "CRITICAL CONFIG ERROR: Your Vercel SUPABASE_SERVICE_ROLE_KEY is currently set to the 'anon' public key. You must change it to the 'service_role' secret key in Vercel settings and REDEPLOY." 
+      }, { status: 500 });
+    }
+
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      serviceKey
     );
 
     const body = await request.json();
