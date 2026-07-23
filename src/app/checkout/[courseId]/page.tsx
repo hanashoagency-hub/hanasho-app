@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, Loader2, ArrowLeft, CheckCircle, CreditCard, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 
 export default function CheckoutPage() {
   const params = useParams();
-  const courseId = params.courseId as string;
+  const searchParams = useSearchParams();
+  const itemId = params.courseId as string;
+  const itemType = searchParams.get("type") || "course";
+  
   const router = useRouter();
   const supabase = createClient();
 
-  const [course, setCourse] = useState<any>(null);
+  const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [phone, setPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("evc");
@@ -21,23 +24,34 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const fetchCourse = async () => {
+    const fetchItem = async () => {
       // Check auth
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push(`/login?next=/checkout/${courseId}`);
+        router.push(`/login?next=/checkout/${itemId}?type=${itemType}`);
         return;
       }
 
-      // Fetch course details
-      const { data } = await supabase.from("courses").select("*").eq("id", courseId).single();
+      // Fetch item details based on type
+      let table = "courses";
+      if (itemType === "diploma") table = "diplomas";
+      if (itemType === "zoom") table = "zoom_classes";
+
+      const { data } = await supabase.from(table).select("*").eq("id", itemId).single();
       if (data) {
-        setCourse(data);
+        // Adjust price based on tier if it's a diploma
+        if (itemType === "diploma") {
+          const tier = searchParams.get("tier");
+          if (tier === "slow") data.price = data.price_slow;
+          else if (tier === "speedy") data.price = data.price_speedy;
+          else if (tier === "onetime") data.price = data.price_onetime;
+        }
+        setItem(data);
       }
       setLoading(false);
     };
-    fetchCourse();
-  }, [courseId, router]);
+    fetchItem();
+  }, [itemId, itemType, router]);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,9 +68,10 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          courseId,
+          itemId,
+          itemType,
           phoneNumber: "252" + phone.replace(/^0+/, ''), // Format for WaafiPay
-          amount: course.price,
+          amount: item.price,
           paymentMethod
         })
       });
@@ -65,7 +80,8 @@ export default function CheckoutPage() {
       if (data.success) {
         setSuccess(true);
         setTimeout(() => {
-          router.push(`/dashboard`);
+        if (itemType === "course") router.push(`/learn/${itemId}`);
+          else router.push(`/dashboard`); // diploma and zoom redirect to dashboard
         }, 3000);
       } else {
         setError(data.error || "Payment failed. Fadlan hubi in taleefankaagu furan yahay oo aad leedahay lacag kugu filan.");
@@ -78,7 +94,7 @@ export default function CheckoutPage() {
   };
 
   if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-white/50" /></div>;
-  if (!course) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Course not found.</div>;
+  if (!item) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Item not found.</div>;
 
   if (success) {
     return (
@@ -88,7 +104,7 @@ export default function CheckoutPage() {
             <CheckCircle className="w-10 h-10 text-green-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Payment Successful!</h2>
-          <p className="text-white/60 mb-8">You now have full access to {course.title}.</p>
+          <p className="text-white/60 mb-8">You now have full access to {item.title}.</p>
           <div className="flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-white/30" /></div>
           <p className="text-white/40 text-sm mt-4">Redirecting to your dashboard...</p>
         </div>
@@ -99,8 +115,8 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#050505] font-sans selection:bg-white/20 pt-24 pb-20">
       <div className="max-w-4xl mx-auto px-6">
-        <Link href={`/courses/${courseId}`} className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-8 text-sm font-medium">
-          <ArrowLeft className="w-4 h-4" /> Back to Course
+        <Link href={itemType === "course" ? `/courses/${itemId}` : itemType === "diploma" ? `/diplomas/${itemId}` : `/live-classes/${itemId}`} className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-8 text-sm font-medium">
+          <ArrowLeft className="w-4 h-4" /> Back to details
         </Link>
 
         <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">Secure Checkout</h1>
@@ -168,7 +184,7 @@ export default function CheckoutPage() {
                   {processing ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> Processing USSD Push...</>
                   ) : (
-                    <><Lock className="w-5 h-5" /> Pay ${course.price} Securely</>
+                    <><Lock className="w-5 h-5" /> Pay ${item.price} Securely</>
                   )}
                 </button>
                 <p className="text-center text-xs text-white/40 mt-4 flex items-center justify-center gap-1.5">
@@ -182,21 +198,21 @@ export default function CheckoutPage() {
           <div className="bg-[#0A0A0A]/50 border border-white/5 rounded-3xl p-8 h-fit">
             <h2 className="text-xl font-bold text-white mb-6">Order Summary</h2>
             <div className="flex gap-4 mb-6 pb-6 border-b border-white/10">
-              {course.cover_image ? (
-                <img src={course.cover_image} alt={course.title} className="w-24 h-16 rounded-lg object-cover" />
+              {item.cover_image ? (
+                <img src={item.cover_image} alt={item.title} className="w-24 h-16 rounded-lg object-cover" />
               ) : (
                 <div className="w-24 h-16 bg-white/10 rounded-lg"></div>
               )}
               <div>
-                <h3 className="font-bold text-white">{course.title}</h3>
-                <p className="text-sm text-white/50">Full Lifetime Access</p>
+                <h3 className="font-bold text-white">{item.title}</h3>
+                <p className="text-sm text-white/50">{itemType === "course" ? "Full Lifetime Access" : "Premium Access"}</p>
               </div>
             </div>
             
             <div className="space-y-3 text-sm mb-6 pb-6 border-b border-white/10">
               <div className="flex justify-between text-white/70">
                 <span>Original Price</span>
-                <span>${course.price}</span>
+                <span>${item.price}</span>
               </div>
               <div className="flex justify-between text-white/70">
                 <span>Discount</span>
@@ -206,12 +222,12 @@ export default function CheckoutPage() {
 
             <div className="flex justify-between items-center mb-8">
               <span className="text-lg font-bold text-white">Total</span>
-              <span className="text-3xl font-bold text-white">${course.price}</span>
+              <span className="text-3xl font-bold text-white">${item.price}</span>
             </div>
 
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 text-sm text-blue-200">
               <ShieldCheck className="w-5 h-5 text-blue-400 flex-shrink-0" />
-              <p>Waa lacag bixin ammaan ah. Isla marka aad bixiso lacagta, casharadu si toos ah ayey kuugu furmayaan.</p>
+              <p>Waa lacag bixin ammaan ah. Isla marka aad bixiso lacagta, fasalka si toos ah ayuu kuugu furmayaa.</p>
             </div>
           </div>
         </div>

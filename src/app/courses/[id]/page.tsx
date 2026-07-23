@@ -37,16 +37,8 @@ export default function CoursePage() {
   const [modules, setModules] = useState<any[]>([]);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
-  const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
-  const [currentLessonTitle, setCurrentLessonTitle] = useState("");
-  const [currentLessonDesc, setCurrentLessonDesc] = useState("");
+  const [user, setUser] = useState<any>(null);
 
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [totalLessons, setTotalLessons] = useState(0);
-  const [savingProgress, setSavingProgress] = useState(false);
-  const [certificate, setCertificate] = useState<{ id: string; certificate_number: string } | null>(null);
-  
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
   const [hasReviewed, setHasReviewed] = useState(false);
@@ -54,7 +46,8 @@ export default function CoursePage() {
   useEffect(() => {
     const fetchCourseData = async () => {
       // 1. Fetch Auth state
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
 
       // 2 & 3. Fetch Course Details, Modules, and Lessons
       const res = await getPublicCourseDetailsAction(courseId);
@@ -86,34 +79,17 @@ export default function CoursePage() {
         
       if (reviewData) {
         setReviews(reviewData);
-        if (user) {
-          setHasReviewed(reviewData.some(r => r.user_id === user.id));
+        if (currentUser) {
+          setHasReviewed(reviewData.some(r => r.user_id === currentUser.id));
         }
       }
 
-      // 5. Check Purchase Status + load progress & certificate
-      if (user) {
-        const { data: purchase } = await supabase.from('purchases').select('*').eq('user_id', user.id).eq('course_id', courseId).single();
+      // 5. Check Purchase Status
+      if (currentUser) {
+        const { data: purchase } = await supabase.from('purchases').select('*').eq('user_id', currentUser.id).eq('course_id', courseId).single();
         if (purchase) {
           setHasPurchased(true);
         }
-
-        const { data: progressRows } = await supabase
-          .from('lesson_progress')
-          .select('lesson_id')
-          .eq('user_id', user.id)
-          .eq('course_id', courseId);
-        if (progressRows) {
-          setCompletedIds(new Set(progressRows.map((r: any) => r.lesson_id)));
-        }
-
-        const { data: cert } = await supabase
-          .from('certificates')
-          .select('id, certificate_number')
-          .eq('user_id', user.id)
-          .eq('course_id', courseId)
-          .maybeSingle();
-        if (cert) setCertificate(cert);
       }
 
       setLoading(false);
@@ -121,53 +97,6 @@ export default function CoursePage() {
 
     fetchCourseData();
   }, [courseId]);
-
-  const playLesson = (lesson: any) => {
-    if (!hasPurchased && !lesson.is_preview) {
-      router.push(`/checkout/${courseId}`);
-      return;
-    }
-    setCurrentVideoId(lesson.youtube_video_id);
-    setCurrentLessonId(lesson.id);
-    setCurrentLessonTitle(lesson.title);
-    setCurrentLessonDesc(lesson.description || "In this lesson, you will learn new concepts related to this module.");
-  };
-
-  const toggleComplete = async () => {
-    if (!currentLessonId || savingProgress) return;
-    const isDone = completedIds.has(currentLessonId);
-
-    // Optimistic update
-    setCompletedIds((prev) => {
-      const next = new Set(prev);
-      if (isDone) next.delete(currentLessonId);
-      else next.add(currentLessonId);
-      return next;
-    });
-    setSavingProgress(true);
-
-    const res = await toggleLessonCompleteAction(currentLessonId, courseId, !isDone);
-    setSavingProgress(false);
-
-    if (!res.success) {
-      // Revert on failure
-      setCompletedIds((prev) => {
-        const next = new Set(prev);
-        if (isDone) next.add(currentLessonId);
-        else next.delete(currentLessonId);
-        return next;
-      });
-      alert(res.error || "Could not save your progress. Please try again.");
-      return;
-    }
-
-    if (res.completedLessonIds) setCompletedIds(new Set(res.completedLessonIds));
-    if (res.certificate) setCertificate(res.certificate);
-  };
-
-  const completedCount = completedIds.size;
-  const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
-  const currentLessonDone = currentLessonId ? completedIds.has(currentLessonId) : false;
 
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
@@ -206,29 +135,6 @@ export default function CoursePage() {
             <span className="flex items-center text-yellow-400 font-bold"><Star className="w-4 h-4 mr-1 fill-current" /> {averageRating}</span>
             <span className="flex items-center"><BookOpen className="w-4 h-4 mr-1.5" /> {modules.length} Modules</span>
           </div>
-
-          {hasPurchased && totalLessons > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase tracking-wider">
-                <span>{completedCount} / {totalLessons} lessons</span>
-                <span className={progressPct === 100 ? "text-[var(--brand-primary)]" : ""}>{progressPct}%</span>
-              </div>
-              <div className="w-full bg-[var(--border-color)] rounded-full h-2 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 bg-[var(--brand-primary)]`}
-                  style={{ width: `${progressPct}%` }}
-                ></div>
-              </div>
-              {certificate && (
-                <Link
-                  href={`/certificate/${certificate.id}`}
-                  className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 rounded-[12px] bg-[var(--brand-primary)] text-[var(--on-brand)] text-sm font-bold hover:bg-[var(--brand-hover)] transition-all"
-                >
-                  <Award className="w-4 h-4" /> View Certificate
-                </Link>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -259,34 +165,27 @@ export default function CoursePage() {
                 <div className="px-2 pb-2">
                   {module.lessons.map((lesson: any) => {
                     const isLocked = !hasPurchased && !lesson.is_preview;
-                    const isPlaying = currentVideoId === lesson.youtube_video_id;
-                    const isCompleted = completedIds.has(lesson.id);
 
                     return (
-                      <button 
+                      <div 
                         key={lesson.id}
-                        onClick={() => playLesson(lesson)}
                         className={`
                           w-full flex items-center justify-between p-3 rounded-[12px] text-sm mb-1 transition-all group
-                          ${isPlaying ? 'bg-[var(--border-color)] text-[var(--brand-primary)]' : 'hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'}
+                          hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent
                         `}
                       >
                         <div className="flex items-center space-x-3 truncate">
                           {isLocked ? (
                             <Lock className="w-4 h-4 text-red-400 flex-shrink-0" />
-                          ) : isCompleted ? (
-                            <CheckCircle className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
-                          ) : isPlaying ? (
-                            <PlayCircle className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
                           ) : (
-                            <PlayCircle className="w-4 h-4 flex-shrink-0" />
+                            <PlayCircle className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
                           )}
-                          <span className={`truncate ${isPlaying ? 'font-bold' : ''}`}>{lesson.title}</span>
+                          <span className={`truncate`}>{lesson.title}</span>
                         </div>
                         <span className={`text-xs flex-shrink-0 ml-2`}>
                           {lesson.duration_minutes}m
                         </span>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -300,45 +199,14 @@ export default function CoursePage() {
       <main className="flex-1 h-[calc(100vh-72px)] md:h-screen overflow-y-auto bg-[var(--bg-primary)] pt-10 md:pt-24" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="max-w-[1400px] mx-auto p-4 md:p-8 lg:p-10">
 
-          {/* Certificate Earned Banner */}
-          {certificate && (
-            <div className="mb-6 md:mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 p-5 md:p-6 rounded-[20px] border border-[var(--brand-primary)] bg-[var(--bg-secondary)]">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[var(--brand-primary)] flex items-center justify-center flex-shrink-0">
-                  <Award className="w-6 h-6 text-[var(--on-brand)]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[var(--text-primary)] font-heading">Course Completed! 🎉</h3>
-                  <p className="text-sm text-[var(--text-secondary)]">You've earned your certificate of completion.</p>
-                </div>
-              </div>
-              <Link
-                href={`/certificate/${certificate.id}`}
-                className="btn-primary w-full sm:w-auto px-6 py-3 whitespace-nowrap"
-              >
-                View Certificate
-              </Link>
-            </div>
-          )}
-
-          {/* Video Player Placeholder */}
+          {/* Course Cover Image Placeholder instead of Video Player */}
           <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
-            {currentVideoId ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
-                title={currentLessonTitle}
-                className="absolute inset-0 w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+            {course.cover_image ? (
+              <img src={course.cover_image} alt={course.title} className="w-full h-full object-cover" />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-secondary)]">
-                <div className="relative">
-                  <button className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border border-[var(--border-color)] flex items-center justify-center transition-all duration-300">
-                    <PlayCircle className="w-10 h-10 md:w-12 md:h-12 text-[var(--border-color)] ml-1.5" />
-                  </button>
-                </div>
-                <p className="text-[var(--text-secondary)] text-sm font-bold">Select a lesson from the curriculum to start learning</p>
+                <BookOpen className="w-16 h-16 text-[var(--border-color)]" />
+                <p className="text-[var(--text-secondary)] font-bold">{course.title}</p>
               </div>
             )}
           </div>
@@ -348,37 +216,28 @@ export default function CoursePage() {
             <div className="lg:col-span-2 space-y-8">
               <div>
                 <h1 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight">
-                  {currentLessonTitle || course.title}
+                  {course.title}
                 </h1>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 border-y border-[var(--border-color)] py-6">
                 {!hasPurchased ? (
-                  <Link href={`/checkout/${courseId}`} className="btn-primary py-3">
-                    <ShoppingCart className="w-5 h-5 mr-2" />
-                    Buy Full Course for ${course.price}
-                  </Link>
+                  user ? (
+                    <Link href={`/checkout/${courseId}?type=course`} className="btn-primary py-3">
+                      <ShoppingCart className="w-5 h-5 mr-2" />
+                      Buy Full Course for ${course.price}
+                    </Link>
+                  ) : (
+                    <Link href={`/register?next=/checkout/${courseId}?type=course`} className="btn-primary py-3">
+                      <ShoppingCart className="w-5 h-5 mr-2" />
+                      Create Account to Buy (${course.price})
+                    </Link>
+                  )
                 ) : (
-                  <button
-                    onClick={toggleComplete}
-                    disabled={!currentLessonId || savingProgress}
-                    className={`flex items-center px-6 py-3 rounded-[20px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      currentLessonDone
-                        ? "bg-[var(--brand-primary)] text-[var(--on-brand)]"
-                        : "btn-secondary text-[var(--text-primary)] border-[var(--border-color)]"
-                    }`}
-                  >
-                    {savingProgress ? (
-                      <Loader2 className="w-5 h-5 mr-2.5 animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-5 h-5 mr-2.5" />
-                    )}
-                    {!currentLessonId
-                      ? "Select a lesson"
-                      : currentLessonDone
-                      ? "Completed"
-                      : "Mark as Complete"}
-                  </button>
+                  <Link href={`/learn/${courseId}`} className="flex items-center px-6 py-3 rounded-[20px] font-bold transition-all bg-[var(--brand-primary)] text-[var(--on-brand)]">
+                    <PlayCircle className="w-5 h-5 mr-2.5" />
+                    Go to Course Content
+                  </Link>
                 )}
                 <button className="flex items-center px-6 py-3 rounded-[20px] bg-[var(--bg-secondary)] border border-[var(--border-color)] transition-all font-bold hover:border-[var(--brand-primary)]">
                   <FileText className="w-5 h-5 mr-2 text-[var(--text-secondary)]" />
@@ -389,10 +248,28 @@ export default function CoursePage() {
               <div className="prose prose-invert max-w-none">
                 <h3 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center">
                   <BookOpen className="w-5 h-5 mr-2 text-[var(--brand-primary)]" />
-                  About this {currentLessonTitle ? "lesson" : "course"}
+                  About this course
                 </h3>
                 <div className="text-[var(--text-secondary)] space-y-4 text-base md:text-lg leading-relaxed">
-                  <p>{currentLessonDesc || course.description}</p>
+                  <p>{course.description}</p>
+                  
+                  {course.benefits && (
+                    <div className="mt-8">
+                      <h4 className="font-bold text-white mb-2">What you will learn:</h4>
+                      <ul className="list-disc pl-5">
+                        {course.benefits.split('\n').map((b: string, i: number) => (
+                          b.trim() && <li key={i}>{b.trim()}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {course.materials_included && (
+                    <div className="mt-6">
+                      <h4 className="font-bold text-white mb-2">Materials Included:</h4>
+                      <p>{course.materials_included}</p>
+                    </div>
+                  )}
                 </div>
               </div>
               

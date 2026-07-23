@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon, Search, Home, Info, Briefcase, BookOpen, Wrench, FileText, Store, Users } from "lucide-react";
+import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon, Search, Home, Info, Briefcase, BookOpen, Wrench, FileText, Store, Users, Award, Video } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useTheme } from "@/components/ThemeProvider";
 import { useLanguage, type Lang } from "@/i18n/LanguageProvider";
@@ -62,6 +62,8 @@ export default function Header() {
     { href: "/about", label: dict.nav.about, icon: Info },
     { href: "/services", label: dict.nav.services, icon: Briefcase },
     { href: "/courses", label: dict.nav.courses, icon: BookOpen },
+    { href: "/diplomas", label: "Diploma", icon: Award },
+    { href: "/live-classes", label: "Live Classes", icon: Video },
     { href: "/ai-tools", label: dict.nav.aiTools, icon: Wrench },
     { href: "/blogs", label: dict.nav.blog, icon: FileText },
     { href: "/marketplace", label: dict.nav.marketplace, icon: Store },

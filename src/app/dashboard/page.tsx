@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, Clock, Award } from "lucide-react";
+import { BookOpen, Clock, Award, Video } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import RewardsWidget from "@/components/RewardsWidget";
@@ -13,11 +13,29 @@ export default async function DashboardPage() {
   // Fetch purchased courses
   const { data: purchases } = await supabase
     .from("purchases")
-    .select("course_id, courses(id, title, cover_image, description)")
+    .select("course_id, item_id, item_type, courses(id, title, cover_image, description)")
     .eq("user_id", user.id);
 
-  const purchasedCourses = (purchases?.map(p => p.courses) || []) as any[];
-  const courseIds = purchasedCourses.map((c: any) => c.id).filter(Boolean);
+  const purchasedCourses = (purchases?.filter(p => p.item_type === 'course' || !p.item_type).map(p => p.courses) || []).filter(Boolean) as any[];
+  const courseIds = purchasedCourses.map((c: any) => c?.id).filter(Boolean);
+
+  // Fetch enrolled diplomas
+  const diplomaPurchases = purchases?.filter(p => p.item_type === 'diploma') || [];
+  const diplomaIds = diplomaPurchases.map(p => p.item_id).filter(Boolean);
+  let enrolledDiplomas: any[] = [];
+  if (diplomaIds.length > 0) {
+    const { data: diplomaData } = await supabase.from('diplomas').select('id, title, cover_image').in('id', diplomaIds);
+    enrolledDiplomas = diplomaData || [];
+  }
+
+  // Fetch enrolled live classes
+  const zoomPurchases = purchases?.filter(p => p.item_type === 'zoom') || [];
+  const zoomIds = zoomPurchases.map(p => p.item_id).filter(Boolean);
+  let enrolledZoomClasses: any[] = [];
+  if (zoomIds.length > 0) {
+    const { data: zoomData } = await supabase.from('zoom_classes').select('id, title, cover_image, start_date, schedule, zoom_link').in('id', zoomIds);
+    enrolledZoomClasses = zoomData || [];
+  }
 
   // Certificates earned
   const { data: certificates } = await supabase
@@ -178,6 +196,67 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Enrolled Diplomas */}
+      {enrolledDiplomas.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-heading font-bold text-[var(--text-primary)] mb-6">My Diplomas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {enrolledDiplomas.map((diploma: any) => (
+              <div key={diploma.id} className="premium-card !p-0 overflow-hidden group">
+                <div className="aspect-video w-full relative overflow-hidden bg-[var(--bg-primary)] border-b border-[var(--border-color)]">
+                  {diploma.cover_image ? (
+                    <img src={diploma.cover_image} alt={diploma.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Award className="w-10 h-10 text-[var(--text-secondary)]" />
+                    </div>
+                  )}
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[var(--brand-primary)] text-[var(--on-brand)] text-xs font-bold">
+                    <Award className="w-3.5 h-3.5" /> Enrolled
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold font-heading text-[var(--text-primary)] mb-2 line-clamp-1">{diploma.title}</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">Hanhub Diploma Program</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Enrolled Live Classes */}
+      {enrolledZoomClasses.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-xl font-heading font-bold text-[var(--text-primary)] mb-6">My Live Classes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {enrolledZoomClasses.map((cls: any) => (
+              <div key={cls.id} className="premium-card !p-0 overflow-hidden group">
+                <div className="aspect-video w-full relative overflow-hidden bg-[var(--bg-primary)] border-b border-[var(--border-color)]">
+                  {cls.cover_image ? (
+                    <img src={cls.cover_image} alt={cls.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Video className="w-10 h-10 text-[var(--text-secondary)]" />
+                    </div>
+                  )}
+                  <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--brand-primary)] text-[var(--on-brand)] text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> LIVE
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold font-heading text-[var(--text-primary)] mb-2 line-clamp-1">{cls.title}</h3>
+                  <p className="text-sm text-[var(--text-secondary)] mb-1">{cls.schedule}</p>
+                  {cls.zoom_link && (
+                    <a href={cls.zoom_link} target="_blank" rel="noopener noreferrer" className="text-[var(--brand-primary)] text-sm font-bold hover:underline">Join Zoom Class →</a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

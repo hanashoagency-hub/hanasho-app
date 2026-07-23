@@ -17,9 +17,11 @@ export async function POST(request: Request) {
     );
 
     const body = await request.json();
-    const { courseId, phoneNumber, amount, paymentMethod } = body;
+    const { itemId, itemType = 'course', phoneNumber, amount, paymentMethod } = body;
+    // Fallback for old requests that still send courseId
+    const targetItemId = itemId || body.courseId;
 
-    if (!courseId || !phoneNumber || !amount || !paymentMethod) {
+    if (!targetItemId || !phoneNumber || !amount || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
           invoiceId: referenceId,
           amount: amount.toString(),
           currency,
-          description: "HanHub LMS Course Purchase"
+          description: `HanHub LMS Purchase (${itemType})`
         }
       }
     };
@@ -79,7 +81,9 @@ export async function POST(request: Request) {
     // Save transaction in database regardless of success/fail first
     const { data: tx, error: txError } = await supabaseAdmin.from('transactions').insert({
       user_id: user.id,
-      course_id: courseId,
+      course_id: itemType === 'course' ? targetItemId : null, // keep legacy field for courses if needed
+      item_id: targetItemId,
+      item_type: itemType,
       amount,
       currency,
       payment_method: paymentMethod,
@@ -97,10 +101,12 @@ export async function POST(request: Request) {
       // Payment successful, grant access
       await supabaseAdmin.from('purchases').insert({
         user_id: user.id,
-        course_id: courseId
+        course_id: itemType === 'course' ? targetItemId : null, // keep legacy field for courses
+        item_id: targetItemId,
+        item_type: itemType
       });
 
-      return NextResponse.json({ success: true, message: 'Payment successful, course unlocked!' });
+      return NextResponse.json({ success: true, message: 'Payment successful, item unlocked!' });
     } else {
       // Payment failed or user rejected USSD
       return NextResponse.json({ success: false, error: data.responseMsg || 'Payment failed or rejected' }, { status: 400 });

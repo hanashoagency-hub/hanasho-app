@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, Users, CreditCard, LogOut, ArrowLeft, ShieldAlert, Loader2, FileText, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, CreditCard, LogOut, ArrowLeft, ShieldAlert, Loader2, FileText, Menu, X, PanelLeftClose, PanelLeftOpen, Award, Video, Stamp } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -123,9 +123,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: "/portal-live", label: "Dashboard", icon: LayoutDashboard },
     { href: "/portal-live/courses", label: "Courses & Modules", icon: BookOpen },
+    { href: "/portal-live/diplomas", label: "Diplomas", icon: Award },
+    { href: "/portal-live/live-classes", label: "Live Classes", icon: Video },
+    { href: "/portal-live/certificates", label: "Certificates", icon: Stamp },
     { href: "/portal-live/blogs", label: "Blogs & Articles", icon: FileText },
     { href: "/portal-live/users", label: "Students & Users", icon: Users },
-    { href: "/portal-live/transactions", label: "WaafiPay Transactions", icon: CreditCard },
+    { href: "/portal-live/transactions", label: "Transactions", icon: CreditCard },
   ];
 
   const handleSignOut = async () => {
