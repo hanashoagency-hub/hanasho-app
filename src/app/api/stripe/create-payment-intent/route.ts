@@ -64,6 +64,13 @@ export async function POST(request: Request) {
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "This course doesn't have a valid price." }, { status: 400 });
     }
+    // Stripe's platform-wide minimum charge (roughly $0.50 for USD) — checking
+    // here gives a clear, specific message instead of a raw Stripe API error.
+    if (currency === "usd" && amount < 50) {
+      return NextResponse.json({
+        error: "This course's price is too low for card payments (Stripe requires at least $0.50). Please contact support.",
+      }, { status: 400 });
+    }
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
@@ -83,9 +90,16 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error("[stripe] create-payment-intent error:", error?.message || error, error?.type ? `(${error.type})` : "");
+
+    // Stripe SDK errors carry a `.type` (StripeInvalidRequestError,
+    // StripeAuthenticationError, StripePermissionError, ...) and a
+    // `.message` that's written to be safe to show end users — surface it
+    // directly instead of a generic string, since that's the fastest way
+    // to actually diagnose a misconfiguration in production.
+    const isStripeError = typeof error?.type === "string" && error.type.startsWith("Stripe");
     return NextResponse.json({
-      error: error?.type === "StripeAuthenticationError"
-        ? "Card payments are misconfigured (Stripe rejected the key). Please contact support."
+      error: isStripeError
+        ? `Stripe error: ${error.message}`
         : "Payment setup failed on our server. Please try again or contact support.",
     }, { status: 500 });
   }

@@ -75,7 +75,11 @@ export async function POST(request: Request) {
       message: alreadyOwned ? "Payment successful, course already owned!" : "Payment successful, course unlocked!",
     });
   } catch (error: any) {
-    console.error("[stripe] confirm error:", error);
-    return NextResponse.json({ success: false, error: "Something went wrong confirming your payment." }, { status: 500 });
+    console.error("[stripe] confirm error:", error?.message || error, error?.type ? `(${error.type})` : "");
+    const isStripeError = typeof error?.type === "string" && error.type.startsWith("Stripe");
+    return NextResponse.json({
+      success: false,
+      error: isStripeError ? `Stripe error: ${error.message}` : "Something went wrong confirming your payment.",
+    }, { status: 500 });
   }
 }
