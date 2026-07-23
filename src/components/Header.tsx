@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon, Search, Home, Info, Briefcase, BookOpen, Wrench, FileText, Store, Users, Award, Video } from "lucide-react";
@@ -20,21 +20,41 @@ export default function Header() {
 
   // Auth state
   const [user, setUser] = useState<any>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const userIdRef = useRef<string | null>(null);
+
+  const fetchAvatar = async (userId: string) => {
+    const { data } = await supabase.from("profiles").select("avatar_url").eq("id", userId).maybeSingle();
+    setAvatarUrl(data?.avatar_url || null);
+  };
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
+      userIdRef.current = session?.user?.id || null;
+      if (session?.user) fetchAvatar(session.user.id);
     };
     checkUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
+      userIdRef.current = session?.user?.id || null;
+      if (session?.user) fetchAvatar(session.user.id);
+      else setAvatarUrl(null);
     });
+
+    // Settings page dispatches this after a successful save so the navbar
+    // avatar/name update immediately without a full page reload.
+    const handleProfileUpdated = () => {
+      if (userIdRef.current) fetchAvatar(userIdRef.current);
+    };
+    window.addEventListener("hanhub:profile-updated", handleProfileUpdated);
 
     return () => {
       authListener.subscription.unsubscribe();
+      window.removeEventListener("hanhub:profile-updated", handleProfileUpdated);
     };
   }, []);
 
@@ -162,8 +182,12 @@ export default function Header() {
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] pl-3 pr-4 py-2 hover:bg-[var(--border-color)] transition-colors"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-[var(--on-brand)]" />
+                  <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] flex items-center justify-center overflow-hidden">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-3.5 h-3.5 text-[var(--on-brand)]" />
+                    )}
                   </div>
                   <span className="text-sm font-medium text-[var(--text-primary)]">{dict.nav.account}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-[var(--text-secondary)]" />

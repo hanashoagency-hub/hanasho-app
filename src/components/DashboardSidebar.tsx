@@ -9,6 +9,7 @@ interface DashboardSidebarProps {
   profileName: string;
   email: string;
   avatarLetter: string;
+  avatarUrl?: string | null;
   xp: number;
   streakCount: number;
   isAdmin: boolean;
@@ -20,6 +21,7 @@ export default function DashboardSidebar({
   profileName,
   email,
   avatarLetter,
+  avatarUrl,
   xp,
   streakCount,
   isAdmin,
@@ -118,8 +120,12 @@ export default function DashboardSidebar({
         {(!isDesktop || !isCollapsed) ? (
           <>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[var(--on-brand)] font-bold text-lg shadow-sm flex-shrink-0">
-                {avatarLetter}
+              <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[var(--on-brand)] font-bold text-lg shadow-sm flex-shrink-0 overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  avatarLetter
+                )}
               </div>
               <div className="overflow-hidden">
                 <h2 className="text-[var(--text-primary)] font-bold truncate font-heading">
@@ -139,8 +145,12 @@ export default function DashboardSidebar({
           </>
         ) : (
           <div className="flex flex-col items-center gap-4 mt-2">
-            <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[var(--on-brand)] font-bold text-lg shadow-sm" title={`${profileName} (${email})`}>
-              {avatarLetter}
+            <div className="w-10 h-10 rounded-[12px] bg-[var(--brand-primary)] flex items-center justify-center text-[var(--on-brand)] font-bold text-lg shadow-sm overflow-hidden" title={`${profileName} (${email})`}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                avatarLetter
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--brand-primary)]" title={`${xp} XP`}>

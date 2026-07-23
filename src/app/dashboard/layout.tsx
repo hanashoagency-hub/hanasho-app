@@ -28,6 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       profileName={profile?.full_name || "Student"}
       email={user.email || ""}
       avatarLetter={(profile?.full_name || user.email || "?")[0].toUpperCase()}
+      avatarUrl={profile?.avatar_url || null}
       xp={stats?.xp ?? 0}
       streakCount={stats?.streak_count ?? 0}
       isAdmin={profile?.role === "admin"}

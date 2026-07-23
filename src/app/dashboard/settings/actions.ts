@@ -1,10 +1,12 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { getAdminClient } from "@/utils/certificates";
 import { revalidatePath } from "next/cache";
 
 export async function updateProfileInfoAction(formData: FormData) {
   try {
+    // Identify the caller from their own session — never trust a client-supplied id.
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -23,14 +25,17 @@ export async function updateProfileInfoAction(formData: FormData) {
       return { success: true };
     }
 
-    const { error } = await supabase
+    // Write via the admin client (same pattern as every other write path in
+    // this app) — only ever scoped to the session-verified user's own id.
+    const admin = getAdminClient();
+    const { error } = await admin
       .from("profiles")
       .update(updates)
       .eq("id", user.id);
 
     if (error) {
-      console.error("Error updating profile:", error);
-      return { success: false, error: "Failed to update profile" };
+      console.error(`[settings] Failed to update profile for user ${user.id}:`, error);
+      return { success: false, error: "Failed to update profile. Please try again." };
     }
 
     revalidatePath("/dashboard");
@@ -38,6 +43,7 @@ export async function updateProfileInfoAction(formData: FormData) {
 
     return { success: true };
   } catch (err: any) {
-    return { success: false, error: err.message || "An unexpected error occurred." };
+    console.error("[settings] Unexpected error updating profile:", err);
+    return { success: false, error: "An unexpected error occurred. Please try again." };
   }
 }
