@@ -115,8 +115,9 @@ export default function StripeCardCheckout({
         } else {
           setSetupError(data.error || "Could not start card payment.");
         }
-      } catch {
-        if (!cancelled) setSetupError("Could not start card payment. Please try again.");
+      } catch (err) {
+        console.error("[stripe] create-payment-intent request failed:", err);
+        if (!cancelled) setSetupError("Couldn't reach the payment server. Check your connection and try again.");
       } finally {
         if (!cancelled) setLoading(false);
       }

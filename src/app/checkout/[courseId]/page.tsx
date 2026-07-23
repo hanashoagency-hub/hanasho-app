@@ -8,6 +8,26 @@ import { getCheckoutItemAction } from "@/app/portal-live/actions";
 import StripeCardCheckout from "@/components/StripeCardCheckout";
 import Link from "next/link";
 
+function MastercardIcon() {
+  return (
+    <svg width="28" height="18" viewBox="0 0 28 18" aria-label="Mastercard" role="img">
+      <circle cx="10.5" cy="9" r="8" fill="#EB001B" />
+      <circle cx="17.5" cy="9" r="8" fill="#F79E1B" fillOpacity="0.9" />
+    </svg>
+  );
+}
+
+function VisaIcon() {
+  return (
+    <svg width="34" height="18" viewBox="0 0 34 18" aria-label="Visa" role="img">
+      <rect width="34" height="18" rx="3" fill="#1A1F71" />
+      <text x="17" y="13" textAnchor="middle" fontSize="9" fontStyle="italic" fontWeight="bold" fill="#fff" fontFamily="Arial, sans-serif">
+        VISA
+      </text>
+    </svg>
+  );
+}
+
 export default function CheckoutPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -150,7 +170,7 @@ export default function CheckoutPage() {
               <div className="space-y-3">
                 <label className="text-sm font-medium text-gray-300">Select Payment Method</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {[...['evc', 'zaad', 'sahal', 'somnet'], ...(itemType === 'course' ? ['card'] : [])].map(method => (
+                  {['evc', 'zaad', 'sahal', 'somnet'].map(method => (
                     <button
                       key={method}
                       type="button"
@@ -161,9 +181,22 @@ export default function CheckoutPage() {
                           : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
                       }`}
                     >
-                      {method === 'card' ? 'Mastercard/Visa' : method}
+                      {method}
                     </button>
                   ))}
+                  {itemType === 'course' && (
+                    <button
+                      type="button"
+                      onClick={() => { setPaymentMethod('card'); setError(""); }}
+                      className={`col-span-2 py-3 rounded-t-xl border text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                        paymentMethod === 'card'
+                          ? "bg-white/10 border-white text-white"
+                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                      }`}
+                    >
+                      <MastercardIcon /> <VisaIcon /> Card
+                    </button>
+                  )}
                 </div>
               </div>
 

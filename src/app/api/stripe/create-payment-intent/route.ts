@@ -12,13 +12,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const secretKey = process.env.STRIPE_SECRET_KEY;
+    // .trim() guards against a stray trailing newline/space from copy-pasting
+    // into Vercel's env var UI — a common cause of "the key looks right but
+    // every request fails" that's otherwise invisible.
+    const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
     if (!secretKey) {
-      return NextResponse.json({ error: "Card payments are not configured yet." }, { status: 500 });
+      return NextResponse.json({ error: "Card payments are not configured yet (missing STRIPE_SECRET_KEY)." }, { status: 500 });
     }
     if (secretKey.startsWith("pk_")) {
       console.error("[stripe] STRIPE_SECRET_KEY is set to a publishable key, not the secret key.");
-      return NextResponse.json({ error: "Card payments are misconfigured. Please contact support." }, { status: 500 });
+      return NextResponse.json({ error: "Card payments are misconfigured (wrong key type). Please contact support." }, { status: 500 });
     }
 
     const stripe = new Stripe(secretKey);
@@ -79,7 +82,11 @@ export async function POST(request: Request) {
       currency,
     });
   } catch (error: any) {
-    console.error("[stripe] create-payment-intent error:", error);
-    return NextResponse.json({ error: "Could not start card payment. Please try again." }, { status: 500 });
+    console.error("[stripe] create-payment-intent error:", error?.message || error, error?.type ? `(${error.type})` : "");
+    return NextResponse.json({
+      error: error?.type === "StripeAuthenticationError"
+        ? "Card payments are misconfigured (Stripe rejected the key). Please contact support."
+        : "Payment setup failed on our server. Please try again or contact support.",
+    }, { status: 500 });
   }
 }

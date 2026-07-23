@@ -12,9 +12,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const secretKey = process.env.STRIPE_SECRET_KEY;
+    const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
     if (!secretKey) {
-      return NextResponse.json({ error: "Card payments are not configured yet." }, { status: 500 });
+      return NextResponse.json({ error: "Card payments are not configured yet (missing STRIPE_SECRET_KEY)." }, { status: 500 });
     }
     const stripe = new Stripe(secretKey);
 
