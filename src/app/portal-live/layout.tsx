@@ -33,11 +33,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         console.error("Error fetching profile role:", error);
       }
 
-      const userRole = profile?.role?.toLowerCase()?.trim();
       const userEmail = user.email?.toLowerCase()?.trim();
 
-      // Check if role is admin OR if the email matches the owner's email as a fallback
-      if (userRole === "admin" || userEmail === "hanasho.agency@gmail.com") {
+      // Check if the email matches the owner's specific email exactly
+      if (userEmail === "hanhub.agency@gmail.com") {
         setIsAdmin(true);
       } else {
         setIsAdmin(false);
