@@ -218,6 +218,20 @@ export async function uploadLessonPdfAction(formData: FormData) {
   }
 }
 
+export async function updateLessonAction(id: string, lessonData: any, courseId: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { error } = await supabaseAdmin.from("lessons").update(lessonData).eq("id", id);
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/portal-live/courses");
+    revalidatePath(`/portal-live/courses/${courseId}`);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function deleteLessonAction(id: string, courseId: string) {
   try {
     const supabaseAdmin = getAdminClient();
@@ -262,6 +276,41 @@ export async function getPublicCoursesAction() {
   } catch (error: any) {
     console.error("Public Fetch Courses Error:", error);
     return { success: false, data: [] };
+  }
+}
+
+export async function getPublicBooksAction() {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("books")
+      .select("*")
+      .eq("is_published", true)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+    return { success: true, data: data || [] };
+  } catch (error: any) {
+    console.error("Public Fetch Books Error:", error);
+    return { success: false, data: [] };
+  }
+}
+
+export async function getPublicBookDetailsAction(bookId: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("books")
+      .select("*")
+      .eq("id", bookId)
+      .eq("is_published", true)
+      .single();
+
+    if (error || !data) throw new Error("Book fetch error");
+    return { success: true, book: data };
+  } catch (error: any) {
+    console.error("Public Fetch Book Details Error:", error);
+    return { success: false, book: null };
   }
 }
 

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Plus, Trash2, GripVertical, Play, FileText, ChevronDown, ChevronRight, Loader2, ArrowLeft, Edit, Check, X, Upload } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { createModuleAction, deleteModuleAction, createLessonAction, deleteLessonAction, getAdminModulesWithLessonsAction, uploadLessonPdfAction } from "../../actions";
+import { createModuleAction, deleteModuleAction, createLessonAction, updateLessonAction, deleteLessonAction, getAdminModulesWithLessonsAction, uploadLessonPdfAction } from "../../actions";
 
 interface Module {
   id: string;
@@ -37,6 +37,7 @@ export default function CourseBuilderPage() {
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [addingModule, setAddingModule] = useState(false);
   const [addingLessonTo, setAddingLessonTo] = useState<string | null>(null);
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [lessonForm, setLessonForm] = useState({ title: "", lesson_type: "video" as 'video' | 'pdf', youtube_video_id: "", pdf_url: "", pdf_name: "", duration_minutes: 0, is_preview: false });
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState("");
@@ -102,21 +103,49 @@ export default function CourseBuilderPage() {
   const addLesson = async (moduleId: string) => {
     if (!lessonForm.title.trim()) return;
     if (lessonForm.lesson_type === 'pdf' && !lessonForm.pdf_url) return;
-    const mod = modules.find(m => m.id === moduleId);
 
-    await createLessonAction(moduleId, {
+    const lessonData = {
       title: lessonForm.title,
       lesson_type: lessonForm.lesson_type,
       youtube_video_id: lessonForm.lesson_type === 'video' ? parseYoutubeId(lessonForm.youtube_video_id) : null,
       pdf_url: lessonForm.lesson_type === 'pdf' ? lessonForm.pdf_url : null,
       duration_minutes: lessonForm.duration_minutes,
       is_preview: lessonForm.is_preview,
-      sort_order: mod ? mod.lessons.length : 0,
-    }, courseId);
+    };
+
+    if (editingLessonId) {
+      await updateLessonAction(editingLessonId, lessonData, courseId);
+    } else {
+      const mod = modules.find(m => m.id === moduleId);
+      await createLessonAction(moduleId, { ...lessonData, sort_order: mod ? mod.lessons.length : 0 }, courseId);
+    }
 
     resetLessonForm();
     setAddingLessonTo(null);
+    setEditingLessonId(null);
     fetchData();
+  };
+
+  const openEditLesson = (moduleId: string, lesson: Lesson) => {
+    setLessonForm({
+      title: lesson.title,
+      lesson_type: lesson.lesson_type,
+      youtube_video_id: lesson.youtube_video_id || "",
+      pdf_url: lesson.pdf_url || "",
+      pdf_name: lesson.pdf_url ? "Existing file" : "",
+      duration_minutes: lesson.duration_minutes || 0,
+      is_preview: lesson.is_preview,
+    });
+    setEditingLessonId(lesson.id);
+    setAddingLessonTo(moduleId);
+    setPdfError("");
+  };
+
+  const cancelLessonForm = () => {
+    setAddingLessonTo(null);
+    setEditingLessonId(null);
+    resetLessonForm();
+    setPdfError("");
   };
 
   const deleteLesson = async (id: string) => {
@@ -184,6 +213,9 @@ export default function CourseBuilderPage() {
                         {lesson.is_preview && <span className="text-green-400"> • Free Preview</span>}
                       </p>
                     </div>
+                    <button onClick={() => openEditLesson(mod.id, lesson)} className="p-1.5 rounded-lg text-white/0 group-hover:text-white/40 hover:!text-white transition-all">
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
                     <button onClick={() => deleteLesson(lesson.id)} className="p-1.5 rounded-lg text-red-400/0 group-hover:text-red-400/50 hover:!text-red-400 hover:bg-red-500/10 transition-all">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -193,6 +225,7 @@ export default function CourseBuilderPage() {
                 {/* Add Lesson Form */}
                 {addingLessonTo === mod.id ? (
                   <div className="mt-3 p-4 bg-white/5 rounded-xl border border-white/10 space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-white/40">{editingLessonId ? "Editing Lesson" : "New Lesson"}</p>
                     <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="Lesson title" />
 
                     <div className="flex gap-2">
@@ -242,18 +275,18 @@ export default function CourseBuilderPage() {
                       Free Preview (visible without purchase)
                     </label>
                     <div className="flex gap-2">
-                      <button onClick={() => { setAddingLessonTo(null); resetLessonForm(); setPdfError(""); }} className="flex-1 py-2 rounded-lg border border-white/10 text-white/60 text-sm hover:bg-white/5 transition-colors">Cancel</button>
+                      <button onClick={cancelLessonForm} className="flex-1 py-2 rounded-lg border border-white/10 text-white/60 text-sm hover:bg-white/5 transition-colors">Cancel</button>
                       <button
                         onClick={() => addLesson(mod.id)}
                         disabled={!lessonForm.title.trim() || uploadingPdf || (lessonForm.lesson_type === 'pdf' && !lessonForm.pdf_url)}
                         className="flex-1 py-2 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-50 hover:scale-[1.02] transition-transform"
                       >
-                        Add Lesson
+                        {editingLessonId ? "Save Changes" : "Add Lesson"}
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => { setAddingLessonTo(mod.id); resetLessonForm(); setPdfError(""); }} className="mt-3 flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors px-3 py-2">
+                  <button onClick={() => { setAddingLessonTo(mod.id); setEditingLessonId(null); resetLessonForm(); setPdfError(""); }} className="mt-3 flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors px-3 py-2">
                     <Plus className="w-4 h-4" /> Add Lesson
                   </button>
                 )}

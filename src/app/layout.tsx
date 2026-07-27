@@ -7,6 +7,7 @@ import FloatingDock from "@/components/navigation/FloatingDock";
 import TelegramPopup from "@/components/TelegramPopup";
 import XirfadleAIWidget from "@/components/XirfadleAIWidget";
 import ThemeProvider from "@/components/ThemeProvider";
+import CartProvider from "@/components/CartProvider";
 import RainBackground from "@/components/RainBackground";
 import TutorialButton from "@/components/TutorialButton";
 import LanguageProvider from "@/i18n/LanguageProvider";
@@ -56,21 +57,23 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <LanguageProvider>
-            <div className="site-bg">
-              <div className="corner-dots corner-dots-tr"></div>
-              <div className="corner-dots corner-dots-bl"></div>
-            </div>
-            <RainBackground />
+            <CartProvider>
+              <div className="site-bg">
+                <div className="corner-dots corner-dots-tr"></div>
+                <div className="corner-dots corner-dots-bl"></div>
+              </div>
+              <RainBackground />
 
-            <Header />
-            {children}
-            <Footer />
-            {/* Reserves scroll space so the floating dock never overlaps the last bit of footer content */}
-            <div aria-hidden="true" style={{ height: "max(5.5rem, calc(3.5rem + env(safe-area-inset-bottom)))" }} />
-            <FloatingDock />
-            <TelegramPopup />
-            <TutorialButton />
-            <XirfadleAIWidget />
+              <Header />
+              {children}
+              <Footer />
+              {/* Reserves scroll space so the floating dock never overlaps the last bit of footer content */}
+              <div aria-hidden="true" style={{ height: "max(5.5rem, calc(3.5rem + env(safe-area-inset-bottom)))" }} />
+              <FloatingDock />
+              <TelegramPopup />
+              <TutorialButton />
+              <XirfadleAIWidget />
+            </CartProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

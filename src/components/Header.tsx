@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon, Search, Home, Info, Briefcase, BookOpen, Wrench, FileText, Store, Users, Award, Video } from "lucide-react";
+import { Menu, X, Globe, ChevronDown, ShoppingCart, User, LogOut, LayoutDashboard, Sun, Moon, Search, Home, Info, Briefcase, BookOpen, Wrench, FileText, Store, Users, Award, Video, BookMarked } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useTheme } from "@/components/ThemeProvider";
+import { useCart } from "@/components/CartProvider";
 import { useLanguage, type Lang } from "@/i18n/LanguageProvider";
 
 export default function Header() {
@@ -13,6 +14,7 @@ export default function Header() {
   const router = useRouter();
   const supabase = createClient();
   const { theme, toggleTheme } = useTheme();
+  const { count: cartCount } = useCart();
   const { lang, setLang, dict } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -82,6 +84,7 @@ export default function Header() {
     { href: "/about", label: dict.nav.about, icon: Info },
     { href: "/services", label: dict.nav.services, icon: Briefcase },
     { href: "/courses", label: dict.nav.courses, icon: BookOpen },
+    { href: "/books", label: "Books", icon: BookMarked },
     { href: "/diplomas", label: "Diploma", icon: Award },
     { href: "/live-classes", label: "Live Classes", icon: Video },
     { href: "/ai-tools", label: dict.nav.aiTools, icon: Wrench },
@@ -172,8 +175,13 @@ export default function Header() {
               )}
             </button>
 
-            <Link href="/checkout" className="relative w-10 h-10 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center justify-center hover:bg-[var(--border-color)] transition-all duration-300">
+            <Link href="/cart" className="relative w-10 h-10 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center justify-center hover:bg-[var(--border-color)] transition-all duration-300">
               <ShoppingCart className="w-4 h-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--brand-primary)] text-[var(--on-brand)] text-[10px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
             </Link>
 
             {user ? (
@@ -265,6 +273,15 @@ export default function Header() {
 
             <Link href="/courses" className="w-9 h-9 flex items-center justify-center text-[var(--text-primary)]">
               <Search className="w-5 h-5" />
+            </Link>
+
+            <Link href="/cart" className="relative w-9 h-9 flex items-center justify-center text-[var(--text-primary)]">
+              <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute top-0 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--brand-primary)] text-[var(--on-brand)] text-[9px] font-bold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
             </Link>
 
             <button

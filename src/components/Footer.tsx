@@ -76,6 +76,7 @@ export default function Footer() {
                 { href: "/about", label: dict.nav.about },
                 { href: "/services", label: dict.nav.services },
                 { href: "/courses", label: dict.nav.courses },
+                { href: "/books", label: "Books" },
                 { href: "/ai-tools", label: dict.nav.aiTools },
                 { href: "/blogs", label: dict.nav.blog },
                 { href: "/marketplace", label: dict.nav.marketplace },

@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ShieldCheck, Loader2, ArrowLeft, CheckCircle, CreditCard, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { getCheckoutItemAction } from "@/app/portal-live/actions";
-import StripeCardCheckout from "@/components/StripeCardCheckout";
-import Link from "next/link";
+import { checkPurchaseStatusAction } from "@/app/portal-live/actions";
+import { useCart } from "@/components/CartProvider";
+import StripeCartCheckout from "@/components/StripeCartCheckout";
 
 function MastercardIcon() {
   return (
@@ -28,17 +29,13 @@ function VisaIcon() {
   );
 }
 
-export default function CheckoutPage() {
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const itemId = params.courseId as string;
-  const itemType = searchParams.get("type") || "course";
-  
+export default function CartCheckoutPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { items, removeItem } = useCart();
 
-  const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [payableItems, setPayableItems] = useState<typeof items>([]);
   const [phone, setPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("evc");
   const [processing, setProcessing] = useState(false);
@@ -46,42 +43,38 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    const fetchItem = async () => {
-      // Check auth
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push(`/login?next=/checkout/${itemId}?type=${itemType}`);
+        router.push(`/login?next=/checkout/cart`);
         return;
       }
 
-      // Fetch item details based on type
-      let table = "courses";
-      if (itemType === "diploma") table = "diplomas";
-      if (itemType === "zoom") table = "zoom_classes";
-      if (itemType === "book") table = "books";
-
-      try {
-        const res = await getCheckoutItemAction(table, itemId);
-        if (res.success && res.item) {
-          const data = res.item;
-          // Adjust price based on tier if it's a diploma
-          if (itemType === "diploma") {
-            const tier = searchParams.get("tier");
-            if (tier === "slow") data.price = data.price_slow;
-            else if (tier === "speedy") data.price = data.price_speedy;
-            else if (tier === "onetime") data.price = data.price_onetime;
-          }
-          setItem(data);
-        } else {
-          console.error("Checkout: item fetch failed", { table, itemId, res });
-        }
-      } catch (err) {
-        console.error("Checkout: exception fetching item", err);
+      if (items.length === 0) {
+        router.push("/cart");
+        return;
       }
+
+      const owned = new Set<string>();
+      for (const item of items) {
+        const res = await checkPurchaseStatusAction(user.id, item.id);
+        if (res?.purchased) owned.add(`${item.type}:${item.id}`);
+      }
+      const payable = items.filter((i) => !owned.has(`${i.type}:${i.id}`));
+
+      if (payable.length === 0) {
+        router.push("/cart");
+        return;
+      }
+
+      setPayableItems(payable);
       setLoading(false);
     };
-    fetchItem();
-  }, [itemId, itemType, router]);
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const total = payableItems.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,36 +87,36 @@ export default function CheckoutPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/payment", {
+      const res = await fetch("/api/payment/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          itemId,
-          itemType,
-          phoneNumber: "252" + phone.replace(/^0+/, ''), // Format for WaafiPay
-          amount: item.price,
+          items: payableItems.map((i) => ({ itemId: i.id, itemType: i.type })),
+          phoneNumber: "252" + phone.replace(/^0+/, ''),
           paymentMethod
         })
       });
 
       const data = await res.json();
       if (data.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push(`/dashboard`);
-        }, 3000);
+        onOrderComplete();
       } else {
         setError(data.error || "Payment failed. Fadlan hubi in taleefankaagu furan yahay oo aad leedahay lacag kugu filan.");
         setProcessing(false);
       }
-    } catch (err: any) {
+    } catch {
       setError("Cilad ayaa dhacday, fadlan dib isku day.");
       setProcessing(false);
     }
   };
 
+  const onOrderComplete = () => {
+    setSuccess(true);
+    payableItems.forEach((i) => removeItem(i.id, i.type));
+    setTimeout(() => router.push('/dashboard'), 3000);
+  };
+
   if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-white/50" /></div>;
-  if (!item) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Item not found.</div>;
 
   if (success) {
     return (
@@ -133,11 +126,11 @@ export default function CheckoutPage() {
             <CheckCircle className="w-12 h-12 text-green-400" />
           </div>
           <h2 className="text-3xl font-bold text-white mb-3">Hambalyo!</h2>
-          <p className="text-xl text-white/80 mb-8">Welcome to the course: <span className="font-bold text-white">{item.title}</span></p>
+          <p className="text-xl text-white/80 mb-8">Your {payableItems.length} item{payableItems.length > 1 ? "s are" : " is"} unlocked.</p>
           <div className="flex justify-center mb-4">
             <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-white/40 text-sm">Redirecting you to the course content...</p>
+          <p className="text-white/40 text-sm">Redirecting you to your dashboard...</p>
         </div>
       </div>
     );
@@ -146,17 +139,16 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#050505] font-sans selection:bg-white/20 pt-24 pb-20">
       <div className="max-w-4xl mx-auto px-6">
-        <Link href={itemType === "course" ? `/courses/${itemId}` : itemType === "diploma" ? `/diplomas/${itemId}` : itemType === "book" ? `/books/${itemId}` : `/live-classes/${itemId}`} className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-8 text-sm font-medium">
-          <ArrowLeft className="w-4 h-4" /> Back to details
+        <Link href="/cart" className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-8 text-sm font-medium">
+          <ArrowLeft className="w-4 h-4" /> Back to cart
         </Link>
 
         <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">Secure Checkout</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Payment Form */}
           <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
-            
+
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-blue-400" /> Payment Details
             </h2>
@@ -185,30 +177,24 @@ export default function CheckoutPage() {
                       {method}
                     </button>
                   ))}
-                  {itemType === 'course' && (
-                    <button
-                      type="button"
-                      onClick={() => { setPaymentMethod('card'); setError(""); }}
-                      className={`col-span-2 py-3 rounded-t-xl border text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                        paymentMethod === 'card'
-                          ? "bg-white/10 border-white text-white"
-                          : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
-                      }`}
-                    >
-                      <MastercardIcon /> <VisaIcon /> Card
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setPaymentMethod('card'); setError(""); }}
+                    className={`col-span-2 py-3 rounded-t-xl border text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                      paymentMethod === 'card'
+                        ? "bg-white/10 border-white text-white"
+                        : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                    }`}
+                  >
+                    <MastercardIcon /> <VisaIcon /> Card
+                  </button>
                 </div>
               </div>
 
               {paymentMethod === 'card' ? (
-                <StripeCardCheckout
-                  courseId={itemId}
-                  amount={Number(item.price)}
-                  onSuccess={(msg) => {
-                    setSuccess(true);
-                    setTimeout(() => router.push('/dashboard'), 3000);
-                  }}
+                <StripeCartCheckout
+                  items={payableItems.map((i) => ({ itemId: i.id, itemType: i.type }))}
+                  onSuccess={onOrderComplete}
                   onError={(msg) => setError(msg)}
                 />
               ) : (
@@ -240,7 +226,7 @@ export default function CheckoutPage() {
                       {processing ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Processing USSD Push...</>
                       ) : (
-                        <><Lock className="w-5 h-5" /> Pay ${item.price} Securely</>
+                        <><Lock className="w-5 h-5" /> Pay ${total.toFixed(2)} Securely</>
                       )}
                     </button>
                   </div>
@@ -253,40 +239,33 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Order Summary */}
           <div className="bg-[#0A0A0A]/50 border border-white/5 rounded-3xl p-8 h-fit">
             <h2 className="text-xl font-bold text-white mb-6">Order Summary</h2>
-            <div className="flex gap-4 mb-6 pb-6 border-b border-white/10">
-              {item.cover_image ? (
-                <img src={item.cover_image} alt={item.title} className="w-24 h-16 rounded-lg object-cover" />
-              ) : (
-                <div className="w-24 h-16 bg-white/10 rounded-lg"></div>
-              )}
-              <div>
-                <h3 className="font-bold text-white">{item.title}</h3>
-                <p className="text-sm text-white/50">{itemType === "course" ? "Full Lifetime Access" : "Premium Access"}</p>
-              </div>
-            </div>
-            
-            <div className="space-y-3 text-sm mb-6 pb-6 border-b border-white/10">
-              <div className="flex justify-between text-white/70">
-                <span>Original Price</span>
-                <span>${item.price}</span>
-              </div>
-              <div className="flex justify-between text-white/70">
-                <span>Discount</span>
-                <span className="text-green-400">-$0.00</span>
-              </div>
+            <div className="space-y-4 mb-6 pb-6 border-b border-white/10">
+              {payableItems.map((item) => (
+                <div key={`${item.type}:${item.id}`} className="flex gap-4">
+                  {item.cover_image ? (
+                    <img src={item.cover_image} alt={item.title} className="w-16 h-12 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-16 h-12 bg-white/10 rounded-lg flex-shrink-0"></div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-white text-sm truncate">{item.title}</h3>
+                    <p className="text-xs text-white/50 uppercase tracking-wider">{item.type}</p>
+                  </div>
+                  <span className="text-white/80 text-sm font-bold flex-shrink-0">${item.price}</span>
+                </div>
+              ))}
             </div>
 
             <div className="flex justify-between items-center mb-8">
               <span className="text-lg font-bold text-white">Total</span>
-              <span className="text-3xl font-bold text-white">${item.price}</span>
+              <span className="text-3xl font-bold text-white">${total.toFixed(2)}</span>
             </div>
 
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 text-sm text-blue-200">
               <ShieldCheck className="w-5 h-5 text-blue-400 flex-shrink-0" />
-              <p>Waa lacag bixin ammaan ah. Isla marka aad bixiso lacagta, fasalka si toos ah ayuu kuugu furmayaa.</p>
+              <p>Waa lacag bixin ammaan ah. Isla marka aad bixiso lacagta, dhammaan alaabta si toos ah ayey kuugu furmayaan.</p>
             </div>
           </div>
         </div>

@@ -16,11 +16,14 @@ import {
   MessageCircle,
   ShoppingCart,
   Loader2,
-  Star
+  Star,
+  Plus,
+  Check
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
 import { getPublicCourseDetailsAction, checkPurchaseStatusAction } from '@/app/portal-live/actions';
+import { useCart } from '@/components/CartProvider';
 import Link from 'next/link';
 import CourseReviewSection from './CourseReviewSection';
 
@@ -29,6 +32,7 @@ export default function CoursePage() {
   const courseId = params.id as string;
   const router = useRouter();
   const supabase = createClient();
+  const { addItem, isInCart } = useCart();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeModule, setActiveModule] = useState<string | null>(null);
@@ -251,6 +255,19 @@ export default function CoursePage() {
                     Go to Course Content
                   </Link>
                 )}
+                {!hasPurchased && (
+                  <button
+                    onClick={() => addItem({ id: courseId, type: 'course', title: course.title, price: Number(course.price), cover_image: course.cover_image })}
+                    disabled={isInCart(courseId, 'course')}
+                    className="flex items-center px-6 py-3 rounded-[20px] bg-[var(--bg-secondary)] border border-[var(--border-color)] transition-all font-bold hover:border-[var(--brand-primary)] disabled:opacity-60 disabled:cursor-default"
+                  >
+                    {isInCart(courseId, 'course') ? (
+                      <><Check className="w-5 h-5 mr-2 text-green-400" /> In Cart</>
+                    ) : (
+                      <><Plus className="w-5 h-5 mr-2 text-[var(--text-secondary)]" /> Add to Cart</>
+                    )}
+                  </button>
+                )}
                 <button className="flex items-center px-6 py-3 rounded-[20px] bg-[var(--bg-secondary)] border border-[var(--border-color)] transition-all font-bold hover:border-[var(--brand-primary)]">
                   <FileText className="w-5 h-5 mr-2 text-[var(--text-secondary)]" />
                   Resources
@@ -303,10 +320,15 @@ export default function CoursePage() {
                   </div>
                   <h3 className="font-heading font-bold text-[var(--text-primary)] text-xl">Need Help?</h3>
                 </div>
-                <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">Join our community discord to ask questions, share your progress, and network with peers.</p>
-                <button className="btn-secondary w-full py-3">
-                  Join Discord Community
-                </button>
+                <p className="text-sm text-[var(--text-secondary)] mb-8 leading-relaxed">Join our community on Telegram to ask questions, share your progress, and network with peers.</p>
+                <a
+                  href="https://t.me/hanhub_so"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary w-full py-3 flex items-center justify-center"
+                >
+                  Join Telegram Community
+                </a>
               </div>
             </div>
           </div>

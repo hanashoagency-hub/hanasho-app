@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { Home, BookOpen, Users, User } from "lucide-react";
+import { Home, BookOpen, BookMarked, Users, User } from "lucide-react";
 import NavButton from "./NavButton";
 import { useActiveRoute } from "./useActiveRoute";
 
@@ -29,6 +29,7 @@ interface DockItemDef {
 const NAV_ITEMS: DockItemDef[] = [
   { kind: "route", href: "/", label: "Home", icon: Home },
   { kind: "route", href: "/courses", label: "Courses", icon: BookOpen },
+  { kind: "route", href: "/books", label: "Books", icon: BookMarked },
   { kind: "external", href: `https://wa.me/${WHATSAPP_NUMBER}`, label: "WhatsApp", icon: WhatsAppIcon, tint: WHATSAPP_TINT },
   { kind: "route", href: "/community", label: "Community", icon: Users },
   { kind: "route", href: "/dashboard", label: "Profile", icon: User },
