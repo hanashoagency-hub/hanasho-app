@@ -349,7 +349,7 @@ export default function CoursePage() {
               <div className="relative w-full aspect-video bg-black">
                 {previewLesson.youtube_video_id ? (
                   <iframe
-                    src={`https://www.youtube.com/embed/${previewLesson.youtube_video_id}?autoplay=1&rel=0`}
+                    src={`https://www.youtube-nocookie.com/embed/${previewLesson.youtube_video_id}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&playsinline=1`}
                     title={previewLesson.title}
                     className="absolute inset-0 w-full h-full border-0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

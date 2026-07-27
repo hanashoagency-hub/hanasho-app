@@ -3,7 +3,8 @@ import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
+import FloatingDock from "@/components/navigation/FloatingDock";
+import TelegramPopup from "@/components/TelegramPopup";
 import XirfadleAIWidget from "@/components/XirfadleAIWidget";
 import ThemeProvider from "@/components/ThemeProvider";
 import RainBackground from "@/components/RainBackground";
@@ -64,7 +65,10 @@ export default function RootLayout({
             <Header />
             {children}
             <Footer />
-            <WhatsAppWidget />
+            {/* Reserves scroll space so the floating dock never overlaps the last bit of footer content */}
+            <div aria-hidden="true" style={{ height: "max(5.5rem, calc(3.5rem + env(safe-area-inset-bottom)))" }} />
+            <FloatingDock />
+            <TelegramPopup />
             <TutorialButton />
             <XirfadleAIWidget />
           </LanguageProvider>

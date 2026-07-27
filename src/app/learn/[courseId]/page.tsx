@@ -310,7 +310,7 @@ export default function LearnPage() {
             <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
               {currentVideoId ? (
                 <iframe
-                  src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
+                  src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&playsinline=1`}
                   title={currentLessonTitle}
                   className="absolute inset-0 w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
