@@ -167,6 +167,32 @@ export async function createLessonAction(moduleId: string, lessonData: any, cour
   }
 }
 
+export async function uploadCourseCoverAction(formData: FormData) {
+  try {
+    const file = formData.get("file") as File | null;
+    if (!file) return { success: false, error: "No file provided." };
+    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+      return { success: false, error: "Only JPG, PNG, or WEBP images are allowed." };
+    }
+    if (file.size > 10 * 1024 * 1024) return { success: false, error: "Image must be under 10MB." };
+
+    const supabaseAdmin = getAdminClient();
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webp`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("course-covers")
+      .upload(path, file, { contentType: "image/webp", upsert: false });
+
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: publicUrlData } = supabaseAdmin.storage.from("course-covers").getPublicUrl(path);
+    return { success: true, url: publicUrlData.publicUrl };
+  } catch (error: any) {
+    console.error("Upload Course Cover Error:", error);
+    return { success: false, error: error.message || "Upload failed." };
+  }
+}
+
 export async function uploadLessonPdfAction(formData: FormData) {
   try {
     const file = formData.get("file") as File | null;

@@ -1,10 +1,36 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, BookOpen, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, BookOpen, ChevronRight, Upload, ImageIcon, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { createCourseAction, updateCourseAction, deleteCourseAction, togglePublishAction, getAdminCoursesAction } from "../actions";
+import { createCourseAction, updateCourseAction, deleteCourseAction, togglePublishAction, getAdminCoursesAction, uploadCourseCoverAction } from "../actions";
+
+const COVER_MAX_WIDTH = 1200;
+
+// Downscales + re-encodes client-side so course covers stay a
+// consistent, fast-loading size regardless of what was uploaded.
+async function compressCoverImage(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, COVER_MAX_WIDTH / bitmap.width);
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not supported");
+  ctx.drawImage(bitmap, 0, 0, width, height);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Image compression failed"))),
+      "image/webp",
+      0.85
+    );
+  });
+}
 
 interface Course {
   id: string;
@@ -44,7 +70,44 @@ export default function AdminCoursesPage() {
   });
   
   const [saving, setSaving] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverError, setCoverError] = useState("");
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+
+  const handleCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+      setCoverError("Please choose a JPG, PNG, or WEBP image.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setCoverError("Image is too large. Please choose a file under 10MB.");
+      e.target.value = "";
+      return;
+    }
+
+    setCoverError("");
+    setUploadingCover(true);
+    try {
+      const compressed = await compressCoverImage(file);
+      const formData = new FormData();
+      formData.append("file", compressed, "cover.webp");
+      const res = await uploadCourseCoverAction(formData);
+      if (res.success && res.url) {
+        setForm((f: any) => ({ ...f, cover_image: res.url }));
+      } else {
+        setCoverError(res.error || "Upload failed. Please try again.");
+      }
+    } catch {
+      setCoverError("Upload failed. Please try again.");
+    } finally {
+      setUploadingCover(false);
+      e.target.value = "";
+    }
+  };
 
   // Save to localStorage whenever form changes, if we are NOT editing an existing course
   useEffect(() => {
@@ -250,8 +313,53 @@ export default function AdminCoursesPage() {
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 resize-none" placeholder="What will students learn?" />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300 block mb-1">Cover Image URL</label>
-                <input value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="https://..." />
+                <label className="text-sm font-medium text-gray-300 block mb-1">Course Thumbnail</label>
+                {coverError && <p className="text-red-400 text-xs mb-2">{coverError}</p>}
+                {form.cover_image ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/10 group">
+                    <img src={form.cover_image} alt="Course cover" className="w-full aspect-video object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => coverInputRef.current?.click()}
+                        className="flex items-center gap-2 bg-white text-black text-sm font-semibold px-4 py-2 rounded-lg"
+                      >
+                        <Upload className="w-4 h-4" /> Replace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, cover_image: "" })}
+                        className="flex items-center gap-2 bg-red-500/90 text-white text-sm font-semibold px-4 py-2 rounded-lg"
+                      >
+                        <X className="w-4 h-4" /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label htmlFor="course-cover-upload" className={`flex flex-col items-center justify-center gap-2 aspect-video rounded-xl border border-dashed cursor-pointer transition-colors ${uploadingCover ? "border-white/10 text-white/30" : "border-white/20 text-white/50 hover:border-white/40 hover:text-white hover:bg-white/5"}`}>
+                    {uploadingCover ? (
+                      <>
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span className="text-sm">Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-8 h-8" />
+                        <span className="text-sm font-medium">Click to upload a thumbnail</span>
+                        <span className="text-xs text-white/30">JPG, PNG or WEBP</span>
+                      </>
+                    )}
+                  </label>
+                )}
+                <input
+                  id="course-cover-upload"
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleCoverSelect}
+                  disabled={uploadingCover}
+                  className="hidden"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
