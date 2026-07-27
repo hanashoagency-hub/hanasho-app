@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
-import { getPublicCourseDetailsAction, getCoursePromotionAction } from '@/app/portal-live/actions';
+import { getPublicCourseDetailsAction, checkCourseAccessAction } from '@/app/portal-live/actions';
 import { getMyTelegramInvitesAction } from '@/app/learn/telegram-actions';
 import Link from 'next/link';
 
@@ -66,18 +66,15 @@ export default function LearnPage() {
         return;
       }
 
-      // Check Purchase Status first; a course inside an active free-access
-      // promotion window is open to any signed-in user. When the promo ends,
-      // this check naturally locks non-purchasers out again on next load.
-      const { data: purchase } = await supabase.from('purchases').select('*').eq('user_id', user.id).eq('course_id', courseId).single();
-      if (!purchase) {
-        const promo = await getCoursePromotionAction(courseId);
-        if (!promo.isFree) {
-          router.push(`/courses/${courseId}`);
-          return;
-        }
-        setIsFreeAccess(true);
+      // Access = purchase OR admin permission grant OR active free promo,
+      // gated on account status. Promo access naturally locks again when
+      // the promotion window ends.
+      const accessRes = await checkCourseAccessAction(user.id, courseId);
+      if (!accessRes.access) {
+        router.push(`/courses/${courseId}`);
+        return;
       }
+      if (accessRes.reason === 'promo') setIsFreeAccess(true);
 
       const res = await getPublicCourseDetailsAction(courseId);
       if (res.success && res.course) {

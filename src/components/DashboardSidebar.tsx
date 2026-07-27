@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, User, Settings, LogOut, ArrowLeft, Trophy, Flame, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { BookOpen, User, Settings, LogOut, ArrowLeft, Trophy, Flame, Menu, X, PanelLeftClose, PanelLeftOpen, MessageSquare } from "lucide-react";
+import { getUnreadCountAction } from "@/app/messages/actions";
 
 interface DashboardSidebarProps {
   profileName: string;
@@ -45,6 +46,18 @@ export default function DashboardSidebar({
     setIsCollapsed(newVal);
     localStorage.setItem("sidebarCollapsed", String(newVal));
   };
+
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      const res = await getUnreadCountAction();
+      if (!cancelled) setUnreadCount(res.count);
+    };
+    poll();
+    const id = setInterval(poll, 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
   
   const pathname = usePathname();
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -180,6 +193,19 @@ export default function DashboardSidebar({
         >
           <BookOpen className="w-5 h-5 text-[var(--brand-primary)] flex-shrink-0" />
           {(!isDesktop || !isCollapsed) && "My Courses"}
+        </Link>
+        <Link
+          href="/dashboard/messages"
+          title={isDesktop && isCollapsed ? "System Messages" : undefined}
+          className={`relative flex items-center ${isDesktop && isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} rounded-[12px] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors font-bold text-sm`}
+        >
+          <MessageSquare className="w-5 h-5 text-[var(--brand-primary)] flex-shrink-0" />
+          {(!isDesktop || !isCollapsed) && "System Messages"}
+          {unreadCount > 0 && (
+            <span className={`${isDesktop && isCollapsed ? 'absolute top-1 right-1' : 'ml-auto'} min-w-[18px] h-[18px] px-1 rounded-full bg-[var(--brand-primary)] text-[var(--on-brand)] text-[10px] font-bold flex items-center justify-center`}>
+              {unreadCount}
+            </span>
+          )}
         </Link>
         <Link
           href="/dashboard/settings"

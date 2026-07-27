@@ -301,7 +301,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       <div
-        className={`fixed inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-[var(--bg-primary)] transition-all duration-300 md:hidden ${
+        className={`fixed inset-0 z-40 flex flex-col items-center justify-start gap-5 bg-[var(--bg-primary)] transition-all duration-300 md:hidden overflow-y-auto pt-28 pb-28 ${
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >

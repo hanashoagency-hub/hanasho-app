@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Users, Search, Shield, ShieldOff, Plus, Edit2, X } from "lucide-react";
+import { Loader2, Users, Search, Shield, ShieldOff, Plus, Edit2, X, KeyRound } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { createUser, updateUserCredentials } from "./actions";
+import AccessModal from "./AccessModal";
 
 interface Profile {
   id: string;
@@ -24,6 +25,7 @@ export default function AdminUsersPage() {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isEditCredsModalOpen, setIsEditCredsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [accessUser, setAccessUser] = useState<Profile | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({ name: "", email: "", password: "", role: "student" });
@@ -158,6 +160,9 @@ export default function AdminUsersPage() {
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="p-4 text-right flex justify-end gap-2">
+                    <button onClick={() => setAccessUser(user)} className="p-2 rounded-lg bg-white/5 text-[#C7F233]/70 hover:bg-white/10 hover:text-[#C7F233] transition-colors" title="Access Permissions">
+                      <KeyRound className="w-4 h-4" />
+                    </button>
                     <button onClick={() => openEditModal(user)} className="p-2 rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-colors" title="Edit Credentials">
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -170,6 +175,11 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Access Permissions Modal */}
+      {accessUser && (
+        <AccessModal user={accessUser} onClose={() => setAccessUser(null)} onSaved={fetchUsers} />
       )}
 
       {/* Add User Modal */}

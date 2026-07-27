@@ -53,16 +53,12 @@ export async function toggleLessonCompleteAction(
 
     const admin = getAdminClient();
 
-    // Enrolled students can record progress — as can anyone currently inside
-    // an active free-access promotion window for this course.
-    const { data: purchase } = await admin
-      .from("purchases")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("course_id", courseId)
-      .maybeSingle();
-
-    if (!purchase) {
+    // Progress can be recorded by anyone with access: purchasers, users
+    // holding an admin permission grant, or visitors inside an active
+    // free-access promotion window.
+    const { hasContentAccess } = await import("@/utils/access");
+    const hasAccess = await hasContentAccess(user.id, "course", courseId);
+    if (!hasAccess) {
       const promo = await getCoursePromotionAction(courseId);
       if (!promo.isFree) {
         return { success: false, error: "You must purchase this course first." };

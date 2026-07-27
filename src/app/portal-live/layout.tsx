@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, Users, CreditCard, LogOut, ArrowLeft, ShieldAlert, Loader2, FileText, Menu, X, PanelLeftClose, PanelLeftOpen, Award, Video, Stamp, BookMarked, Send, Megaphone, TicketPercent, Mail } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, CreditCard, LogOut, ArrowLeft, ShieldAlert, Loader2, FileText, Menu, X, PanelLeftClose, PanelLeftOpen, Award, Video, Stamp, BookMarked, Send, Megaphone, TicketPercent, Mail, MessageSquare } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -133,6 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/portal-live/telegram", label: "Telegram Access", icon: Send },
     { href: "/portal-live/announcements", label: "Announcements", icon: Megaphone },
     { href: "/portal-live/coupons", label: "Coupons", icon: TicketPercent },
+    { href: "/portal-live/messages", label: "Messages", icon: MessageSquare },
     { href: "/portal-live/broadcast", label: "Email Broadcast", icon: Mail },
   ];
 

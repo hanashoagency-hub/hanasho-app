@@ -577,6 +577,22 @@ export async function getActiveAnnouncementsAction(placement: string, courseId?:
   }
 }
 
+// Full access check: purchase OR admin grant OR active free promotion,
+// gated on the account not being suspended/banned.
+export async function checkCourseAccessAction(userId: string, courseId: string) {
+  try {
+    const { hasContentAccess, isAccountActive } = await import("@/utils/access");
+    if (!(await isAccountActive(userId))) return { access: false, reason: "account" };
+    if (await hasContentAccess(userId, "course", courseId)) return { access: true, reason: "granted" };
+    const promo = await getCoursePromotionAction(courseId);
+    if (promo.isFree) return { access: true, reason: "promo" };
+    return { access: false, reason: "none" };
+  } catch (error: any) {
+    console.error("Course Access Check Error:", error);
+    return { access: false, reason: "error" };
+  }
+}
+
 export async function getCheckoutPriceAction(courseId: string, couponCode?: string | null) {
   const failure = {
     success: false as boolean,
