@@ -43,6 +43,9 @@ export default function CoursePage() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [hasReviewed, setHasReviewed] = useState(false);
 
+  // Free preview modal
+  const [previewLesson, setPreviewLesson] = useState<any>(null);
+
   useEffect(() => {
     const fetchCourseData = async () => {
       // 1. Fetch Auth state
@@ -162,27 +165,39 @@ export default function CoursePage() {
                 <div className="px-2 pb-2">
                   {module.lessons.map((lesson: any) => {
                     const isLocked = !hasPurchased && !lesson.is_preview;
+                    const isPdf = lesson.lesson_type === 'pdf';
 
                     return (
-                      <div 
+                      <button
                         key={lesson.id}
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => !isLocked && setPreviewLesson(lesson)}
                         className={`
-                          w-full flex items-center justify-between p-3 rounded-[12px] text-sm mb-1 transition-all group
-                          hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent
+                          w-full flex items-center justify-between p-3 rounded-[12px] text-sm mb-1 transition-all group text-left
+                          border border-transparent
+                          ${isLocked
+                            ? 'opacity-60 cursor-not-allowed text-[var(--text-secondary)]'
+                            : 'hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer'}
                         `}
                       >
                         <div className="flex items-center space-x-3 truncate">
                           {isLocked ? (
                             <Lock className="w-4 h-4 text-red-400 flex-shrink-0" />
+                          ) : isPdf ? (
+                            <FileText className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
                           ) : (
                             <PlayCircle className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
                           )}
-                          <span className={`truncate`}>{lesson.title}</span>
+                          <span className="truncate">{lesson.title}</span>
+                          {!isLocked && lesson.is_preview && !hasPurchased && (
+                            <span className="text-[10px] font-bold text-[var(--brand-primary)] uppercase flex-shrink-0">Free</span>
+                          )}
                         </div>
                         <span className={`text-xs flex-shrink-0 ml-2`}>
-                          {lesson.duration_minutes}m
+                          {isPdf ? 'PDF' : `${lesson.duration_minutes}m`}
                         </span>
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -298,6 +313,58 @@ export default function CoursePage() {
           
         </div>
       </main>
+
+      {/* Free Preview Modal */}
+      {previewLesson && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80"
+          onClick={() => setPreviewLesson(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl bg-[var(--bg-secondary)] rounded-[20px] overflow-hidden border border-[var(--border-color)] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+              <div>
+                <span className="text-[10px] font-bold text-[var(--brand-primary)] uppercase tracking-wider">Free Preview</span>
+                <h3 className="font-bold font-heading text-[var(--text-primary)] truncate pr-4">{previewLesson.title}</h3>
+              </div>
+              <button
+                onClick={() => setPreviewLesson(null)}
+                className="p-2 rounded-full hover:bg-[var(--border-color)] flex-shrink-0 text-[var(--text-primary)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {previewLesson.lesson_type === 'pdf' && previewLesson.pdf_url ? (
+              <div className="relative w-full h-[70vh] bg-white">
+                <iframe
+                  src={previewLesson.pdf_url}
+                  title={previewLesson.title}
+                  className="absolute inset-0 w-full h-full border-0"
+                ></iframe>
+              </div>
+            ) : (
+              <div className="relative w-full aspect-video bg-black">
+                {previewLesson.youtube_video_id ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${previewLesson.youtube_video_id}?autoplay=1&rel=0`}
+                    title={previewLesson.title}
+                    className="absolute inset-0 w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-[var(--text-secondary)] text-sm font-bold">
+                    No video available for this lesson.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
