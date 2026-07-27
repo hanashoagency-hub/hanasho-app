@@ -4,6 +4,7 @@ import { createClient as createServerClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/utils/certificates";
 import { provisionTelegramAccessForPurchase } from "@/utils/telegramInvites";
 import { sendPurchaseReceipt } from "@/utils/email";
+import { incrementCouponUse } from "@/utils/pricing";
 
 export async function POST(request: Request) {
   try {
@@ -74,6 +75,10 @@ export async function POST(request: Request) {
     const alreadyOwned = purchaseResult?.[0]?.already_owned;
 
     if (!alreadyOwned) {
+      if (intent.metadata?.coupon_id) {
+        await incrementCouponUse(intent.metadata.coupon_id);
+      }
+
       const { data: profile } = await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
       const firstName = profile?.full_name?.split(" ")[0] || "there";
 

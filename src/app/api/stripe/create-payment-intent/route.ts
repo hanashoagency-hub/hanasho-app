@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/utils/certificates";
+import { getEffectiveCoursePrice } from "@/utils/pricing";
 
 export async function POST(request: Request) {
   try {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     const stripe = new Stripe(secretKey);
 
     const body = await request.json();
-    const { courseId } = body;
+    const { courseId, couponCode } = body;
     if (!courseId) {
       return NextResponse.json({ error: "Missing courseId" }, { status: 400 });
     }
@@ -58,8 +59,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "You already own this course." }, { status: 400 });
     }
 
+    // Server-authoritative pricing including any active promotion/coupon —
+    // never trusts a client-supplied amount or discount.
+    const effective = await getEffectiveCoursePrice(courseId, couponCode);
+    if (!effective) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
+    if (effective.isFree) {
+      return NextResponse.json({ error: "This course is currently free — no payment needed. Just open the course page and start learning." }, { status: 400 });
+    }
+
     const currency = (course.currency || "USD").toLowerCase();
-    const amount = Math.round(Number(course.price) * 100);
+    const amount = Math.round(effective.finalPrice * 100);
 
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "This course doesn't have a valid price." }, { status: 400 });
@@ -80,6 +91,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         course_id: courseId,
         course_title: course.title,
+        coupon_id: effective.couponId || "",
       },
     });
 

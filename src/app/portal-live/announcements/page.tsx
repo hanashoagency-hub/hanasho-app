@@ -60,10 +60,16 @@ export default function AdminAnnouncementsPage() {
     title: "", description: "", button_text: "", button_link: "",
     color_theme: "lime", icon: "🎉",
     announcement_type: "general", placement: "site_wide", course_id: "",
+    discount_percentage: null as number | null,
     show_countdown: false, is_pinned: false, is_enabled: true, priority: 0,
     start_at: new Date().toISOString(), end_at: "" as string | null,
   };
   const [form, setForm] = useState(defaultForm);
+
+  const DISCOUNT_TYPES = ["discount", "flash_sale", "limited_time_offer"];
+  const needsCourse = form.placement === "course_page" || form.announcement_type === "free_course_promo" || DISCOUNT_TYPES.includes(form.announcement_type);
+  const needsDiscountPct = DISCOUNT_TYPES.includes(form.announcement_type);
+  const isFreePromo = form.announcement_type === "free_course_promo";
 
   const fetchData = async () => {
     const [aRes, cRes] = await Promise.all([getAdminAnnouncementsAction(), getAdminCoursesAction()]);
@@ -86,6 +92,7 @@ export default function AdminAnnouncementsPage() {
       title: a.title, description: a.description || "", button_text: a.button_text || "", button_link: a.button_link || "",
       color_theme: a.color_theme, icon: a.icon || "",
       announcement_type: a.announcement_type, placement: a.placement, course_id: a.course_id || "",
+      discount_percentage: a.discount_percentage ?? null,
       show_countdown: a.show_countdown, is_pinned: a.is_pinned, is_enabled: a.is_enabled, priority: a.priority,
       start_at: a.start_at, end_at: a.end_at,
     });
@@ -95,7 +102,12 @@ export default function AdminAnnouncementsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const payload = { ...form, end_at: form.end_at || null, course_id: form.placement === "course_page" ? (form.course_id || null) : null };
+      const payload = {
+        ...form,
+        end_at: form.end_at || null,
+        course_id: needsCourse ? (form.course_id || null) : null,
+        discount_percentage: needsDiscountPct ? form.discount_percentage : null,
+      };
       if (editing) {
         await updateAnnouncementAction(editing.id, payload);
       } else {
@@ -233,23 +245,47 @@ export default function AdminAnnouncementsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-300 block mb-1">Placement</label>
+                <select value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/20">
+                  {PLACEMENTS.map((p) => <option key={p.value} value={p.value} className="bg-[#0A0A0A]">{p.label}</option>)}
+                </select>
+              </div>
+
+              {(isFreePromo || needsDiscountPct) && (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                  <p className="text-xs text-white/50">
+                    {isFreePromo
+                      ? "This makes the selected course fully free — real access, no payment required — for everyone while this announcement is active. Access is automatically locked again once it ends."
+                      : "This applies a real percentage discount to the selected course's checkout price while this announcement is active."}
+                  </p>
+                  <div className={`grid ${needsDiscountPct ? "grid-cols-2" : "grid-cols-1"} gap-4`}>
+                    <div>
+                      <label className="text-sm font-medium text-gray-300 block mb-1">Course</label>
+                      <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/20">
+                        <option value="" className="bg-[#0A0A0A]">Select a course...</option>
+                        {courses.map((c: any) => <option key={c.id} value={c.id} className="bg-[#0A0A0A]">{c.title}</option>)}
+                      </select>
+                    </div>
+                    {needsDiscountPct && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-300 block mb-1">Discount %</label>
+                        <input type="number" min={1} max={99} value={form.discount_percentage ?? ""} onChange={(e) => setForm({ ...form, discount_percentage: e.target.value ? parseFloat(e.target.value) : null })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="e.g. 30" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!isFreePromo && !needsDiscountPct && form.placement === "course_page" && (
                 <div>
-                  <label className="text-sm font-medium text-gray-300 block mb-1">Placement</label>
-                  <select value={form.placement} onChange={(e) => setForm({ ...form, placement: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/20">
-                    {PLACEMENTS.map((p) => <option key={p.value} value={p.value} className="bg-[#0A0A0A]">{p.label}</option>)}
+                  <label className="text-sm font-medium text-gray-300 block mb-1">Course</label>
+                  <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/20">
+                    <option value="" className="bg-[#0A0A0A]">Select a course...</option>
+                    {courses.map((c: any) => <option key={c.id} value={c.id} className="bg-[#0A0A0A]">{c.title}</option>)}
                   </select>
                 </div>
-                {form.placement === "course_page" && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-300 block mb-1">Course</label>
-                    <select value={form.course_id} onChange={(e) => setForm({ ...form, course_id: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/20">
-                      <option value="" className="bg-[#0A0A0A]">Select a course...</option>
-                      {courses.map((c: any) => <option key={c.id} value={c.id} className="bg-[#0A0A0A]">{c.title}</option>)}
-                    </select>
-                  </div>
-                )}
-              </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

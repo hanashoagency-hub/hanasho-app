@@ -87,11 +87,13 @@ function CardForm({
 export default function StripeCardCheckout({
   courseId,
   amount,
+  couponCode,
   onSuccess,
   onError,
 }: {
   courseId: string;
   amount: number;
+  couponCode?: string | null;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
 }) {
@@ -106,7 +108,7 @@ export default function StripeCardCheckout({
         const res = await fetch("/api/stripe/create-payment-intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ courseId }),
+          body: JSON.stringify({ courseId, couponCode }),
         });
         const data = await res.json();
         if (cancelled) return;
@@ -126,7 +128,7 @@ export default function StripeCardCheckout({
     return () => {
       cancelled = true;
     };
-  }, [courseId]);
+  }, [courseId, couponCode]);
 
   if (loading) {
     return (

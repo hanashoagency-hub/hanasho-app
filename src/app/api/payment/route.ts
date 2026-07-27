@@ -3,6 +3,7 @@ import { createClient as createServerClient } from '@/utils/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { provisionTelegramAccessForPurchase } from '@/utils/telegramInvites';
 import { sendPurchaseReceipt } from '@/utils/email';
+import { getEffectiveCoursePrice, incrementCouponUse } from '@/utils/pricing';
 
 const RECEIPT_TABLE_BY_TYPE: Record<string, string> = {
   course: 'courses',
@@ -55,11 +56,28 @@ export async function POST(request: Request) {
     );
 
     const body = await request.json();
-    const { itemId, itemType = 'course', phoneNumber, amount, paymentMethod } = body;
+    const { itemId, itemType = 'course', phoneNumber, amount, paymentMethod, couponCode } = body;
     const targetItemId = itemId || body.courseId;
 
     if (!targetItemId || !phoneNumber || !amount || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // For courses, the charge amount is always recomputed server-side
+    // (base price + any active promotion/coupon) — the client's amount is
+    // display-only and never trusted.
+    let chargeAmount = Number(amount);
+    let redeemableCouponId: string | null = null;
+    if (itemType === 'course') {
+      const effective = await getEffectiveCoursePrice(targetItemId, couponCode);
+      if (!effective) {
+        return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+      }
+      if (effective.isFree) {
+        return NextResponse.json({ error: 'This course is currently free — no payment needed. Just open the course page and start learning.' }, { status: 400 });
+      }
+      chargeAmount = effective.finalPrice;
+      redeemableCouponId = effective.couponId;
     }
 
     const currency = 'USD';
@@ -88,7 +106,7 @@ export async function POST(request: Request) {
         transactionInfo: {
           referenceId,
           invoiceId: referenceId,
-          amount: amount.toString(),
+          amount: chargeAmount.toString(),
           currency,
           description: `HanHub LMS Purchase (${itemType})`
         }
@@ -115,7 +133,7 @@ export async function POST(request: Request) {
     const { data: purchaseResult, error: rpcErr } = await supabaseAdmin.rpc('complete_purchase', {
       p_user_id: user.id,
       p_course_id: targetItemId,
-      p_amount: Number(amount),
+      p_amount: chargeAmount,
       p_currency: currency,
       p_payment_method: paymentMethod,
       p_phone_number: phoneNumber,
@@ -154,6 +172,10 @@ export async function POST(request: Request) {
     const alreadyOwned = purchaseResult?.[0]?.already_owned;
 
     if (!alreadyOwned) {
+      if (redeemableCouponId) {
+        await incrementCouponUse(redeemableCouponId);
+      }
+
       const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
       const firstName = profile?.full_name?.split(' ')[0] || 'there';
 
@@ -173,7 +195,7 @@ export async function POST(request: Request) {
           to: user.email,
           firstName,
           itemTitle: item?.title || 'Your purchase',
-          amount: Number(amount),
+          amount: chargeAmount,
           currency,
           referenceId,
         });

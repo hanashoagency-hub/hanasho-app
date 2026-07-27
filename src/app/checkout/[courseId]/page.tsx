@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, Loader2, ArrowLeft, CheckCircle, CreditCard, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { getCheckoutItemAction } from "@/app/portal-live/actions";
+import { getCheckoutItemAction, getCheckoutPriceAction } from "@/app/portal-live/actions";
 import StripeCardCheckout from "@/components/StripeCardCheckout";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import Link from "next/link";
@@ -46,6 +46,41 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Promo/coupon pricing (courses only; server is the source of truth)
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponMessage, setCouponMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [pricing, setPricing] = useState<{ basePrice: number; finalPrice: number; appliedPct: number } | null>(null);
+
+  const effectivePrice = itemType === "course" && pricing ? pricing.finalPrice : Number(item?.price || 0);
+
+  const refreshPricing = async (coupon: string | null) => {
+    if (itemType !== "course") return;
+    const res = await getCheckoutPriceAction(itemId, coupon);
+    if (res.success) {
+      setPricing({ basePrice: res.basePrice!, finalPrice: res.finalPrice!, appliedPct: res.appliedPct! });
+      if (coupon) {
+        if (res.couponError) {
+          setAppliedCoupon(null);
+          setCouponMessage({ text: res.couponError, ok: false });
+        } else if (res.couponPct! > 0) {
+          setAppliedCoupon(coupon);
+          setCouponMessage({ text: `Coupon applied — ${res.couponPct}% off!`, ok: true });
+        }
+      }
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setApplyingCoupon(true);
+    setCouponMessage(null);
+    await refreshPricing(code);
+    setApplyingCoupon(false);
+  };
+
   useEffect(() => {
     const fetchItem = async () => {
       // Check auth
@@ -79,6 +114,14 @@ export default function CheckoutPage() {
       } catch (err) {
         console.error("Checkout: exception fetching item", err);
       }
+
+      if (itemType === "course") {
+        const priceRes = await getCheckoutPriceAction(itemId, null);
+        if (priceRes.success) {
+          setPricing({ basePrice: priceRes.basePrice!, finalPrice: priceRes.finalPrice!, appliedPct: priceRes.appliedPct! });
+        }
+      }
+
       setLoading(false);
     };
     fetchItem();
@@ -102,7 +145,8 @@ export default function CheckoutPage() {
           itemId,
           itemType,
           phoneNumber: "252" + phone.replace(/^0+/, ''), // Format for WaafiPay
-          amount: item.price,
+          amount: effectivePrice,
+          couponCode: appliedCoupon,
           paymentMethod
         })
       });
@@ -203,10 +247,37 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {itemType === "course" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Coupon Code (optional)</label>
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="e.g. WELCOME20"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white font-mono tracking-wider placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={applyingCoupon || !couponInput.trim()}
+                      className="px-5 rounded-xl bg-white/10 border border-white/10 text-white text-sm font-bold hover:bg-white/20 transition-colors disabled:opacity-40"
+                    >
+                      {applyingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                    </button>
+                  </div>
+                  {couponMessage && (
+                    <p className={`text-xs ${couponMessage.ok ? "text-green-400" : "text-red-400"}`}>{couponMessage.text}</p>
+                  )}
+                </div>
+              )}
+
               {paymentMethod === 'card' ? (
                 <StripeCardCheckout
+                  key={appliedCoupon || "no-coupon"}
                   courseId={itemId}
-                  amount={Number(item.price)}
+                  amount={effectivePrice}
+                  couponCode={appliedCoupon}
                   onSuccess={(msg) => {
                     setSuccess(true);
                     setTimeout(() => router.push('/dashboard'), 3000);
@@ -242,7 +313,7 @@ export default function CheckoutPage() {
                       {processing ? (
                         <><Loader2 className="w-5 h-5 animate-spin" /> Processing USSD Push...</>
                       ) : (
-                        <><Lock className="w-5 h-5" /> Pay ${item.price} Securely</>
+                        <><Lock className="w-5 h-5" /> Pay ${effectivePrice.toFixed(2)} Securely</>
                       )}
                     </button>
                   </div>
@@ -273,17 +344,17 @@ export default function CheckoutPage() {
             <div className="space-y-3 text-sm mb-6 pb-6 border-b border-white/10">
               <div className="flex justify-between text-white/70">
                 <span>Original Price</span>
-                <span>${item.price}</span>
+                <span>${Number(item.price).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-white/70">
-                <span>Discount</span>
-                <span className="text-green-400">-$0.00</span>
+                <span>Discount{pricing && pricing.appliedPct > 0 ? ` (${pricing.appliedPct}%)` : ""}</span>
+                <span className="text-green-400">-${(Number(item.price) - effectivePrice).toFixed(2)}</span>
               </div>
             </div>
 
             <div className="flex justify-between items-center mb-8">
               <span className="text-lg font-bold text-white">Total</span>
-              <span className="text-3xl font-bold text-white">${item.price}</span>
+              <span className="text-3xl font-bold text-white">${effectivePrice.toFixed(2)}</span>
             </div>
 
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 text-sm text-blue-200">

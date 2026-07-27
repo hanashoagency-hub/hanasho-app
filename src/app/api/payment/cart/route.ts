@@ -3,6 +3,7 @@ import { createClient as createServerClient } from '@/utils/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import { provisionTelegramAccessForPurchase } from '@/utils/telegramInvites';
 import { sendPurchaseReceipt } from '@/utils/email';
+import { getEffectiveCoursePrice } from '@/utils/pricing';
 
 const TABLE_BY_TYPE: Record<string, string> = {
   course: 'courses',
@@ -78,7 +79,13 @@ export async function POST(request: Request) {
       if (error || !data) {
         return NextResponse.json({ error: `One of the items in your cart could not be found.` }, { status: 404 });
       }
-      resolvedItems.push({ itemId, itemType, price: Number(data.price) || 0 });
+
+      let price = Number(data.price) || 0;
+      if (itemType === 'course') {
+        const effective = await getEffectiveCoursePrice(itemId);
+        if (effective) price = effective.isFree ? 0 : effective.finalPrice;
+      }
+      resolvedItems.push({ itemId, itemType, price });
     }
 
     // Skip anything the user already owns instead of double-charging for it.

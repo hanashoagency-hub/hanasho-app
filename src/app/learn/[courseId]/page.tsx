@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
-import { getPublicCourseDetailsAction } from '@/app/portal-live/actions';
+import { getPublicCourseDetailsAction, getCoursePromotionAction } from '@/app/portal-live/actions';
 import { getMyTelegramInvitesAction } from '@/app/learn/telegram-actions';
 import Link from 'next/link';
 
@@ -53,6 +53,7 @@ export default function LearnPage() {
   const [telegramLinks, setTelegramLinks] = useState<{ channelInviteLink: string; groupInviteLink: string } | null>(null);
   const [telegramLoading, setTelegramLoading] = useState(true);
   const [telegramError, setTelegramError] = useState("");
+  const [isFreeAccess, setIsFreeAccess] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'content' | 'materials' | 'announcements'>('content');
 
@@ -65,11 +66,17 @@ export default function LearnPage() {
         return;
       }
 
-      // Check Purchase Status first
+      // Check Purchase Status first; a course inside an active free-access
+      // promotion window is open to any signed-in user. When the promo ends,
+      // this check naturally locks non-purchasers out again on next load.
       const { data: purchase } = await supabase.from('purchases').select('*').eq('user_id', user.id).eq('course_id', courseId).single();
       if (!purchase) {
-        router.push(`/courses/${courseId}`);
-        return;
+        const promo = await getCoursePromotionAction(courseId);
+        if (!promo.isFree) {
+          router.push(`/courses/${courseId}`);
+          return;
+        }
+        setIsFreeAccess(true);
       }
 
       const res = await getPublicCourseDetailsAction(courseId);
@@ -223,7 +230,12 @@ export default function LearnPage() {
           {/* Telegram VIP Access */}
           <div className="mt-5 p-4 rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-primary)]">
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] mb-3">Telegram Access</p>
-            {telegramLoading ? (
+            {isFreeAccess ? (
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                🔒 You have full free course access, but VIP Telegram Channels and the Premium Community are available only for paid members.{" "}
+                <Link href={`/checkout/${courseId}?type=course`} className="text-[var(--brand-primary)] font-bold hover:underline">Buy the course</Link> to unlock them.
+              </p>
+            ) : telegramLoading ? (
               <div className="flex items-center justify-center py-3">
                 <Loader2 className="w-4 h-4 animate-spin text-[var(--text-secondary)]" />
               </div>

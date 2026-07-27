@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
-import { getPublicCourseDetailsAction, checkPurchaseStatusAction } from '@/app/portal-live/actions';
+import { getPublicCourseDetailsAction, checkPurchaseStatusAction, getCoursePromotionAction } from '@/app/portal-live/actions';
 import { useCart } from '@/components/CartProvider';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import Link from 'next/link';
@@ -43,6 +43,7 @@ export default function CoursePage() {
   const [hasPurchased, setHasPurchased] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [promotion, setPromotion] = useState<{ isFree: boolean; discountPercentage: number; endsAt: string | null }>({ isFree: false, discountPercentage: 0, endsAt: null });
 
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -70,6 +71,12 @@ export default function CoursePage() {
         // If course is not found or not published
         router.push("/courses");
         return;
+      }
+
+      // Check for an active free/discount promotion on this course
+      const promoRes = await getCoursePromotionAction(courseId);
+      if (promoRes.success) {
+        setPromotion({ isFree: promoRes.isFree, discountPercentage: promoRes.discountPercentage, endsAt: promoRes.endsAt });
       }
 
       // 4. Fetch Reviews
@@ -241,26 +248,49 @@ export default function CoursePage() {
                 </h1>
               </div>
 
+              {promotion.isFree && !hasPurchased && (
+                <div className="flex items-center gap-2 text-sm font-bold text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border border-[var(--brand-primary)]/20 rounded-[14px] px-4 py-3">
+                  🎉 Free for a limited time — full course access, no payment required.
+                </div>
+              )}
+
               <div className="flex flex-wrap items-center gap-4 border-y border-[var(--border-color)] py-6">
-                {!hasPurchased ? (
-                  user ? (
-                    <Link href={`/checkout/${courseId}?type=course`} className="btn-primary py-3">
-                      <ShoppingCart className="w-5 h-5 mr-2" />
-                      Buy Full Course for ${course.price}
-                    </Link>
-                  ) : (
-                    <Link href={`/register?next=/checkout/${courseId}?type=course`} className="btn-primary py-3">
-                      <ShoppingCart className="w-5 h-5 mr-2" />
-                      Create Account to Buy (${course.price})
-                    </Link>
-                  )
-                ) : (
+                {hasPurchased ? (
                   <Link href={`/learn/${courseId}`} className="flex items-center px-6 py-3 rounded-[20px] font-bold transition-all bg-[var(--brand-primary)] text-[var(--on-brand)]">
                     <PlayCircle className="w-5 h-5 mr-2.5" />
                     Go to Course Content
                   </Link>
+                ) : promotion.isFree ? (
+                  user ? (
+                    <Link href={`/learn/${courseId}`} className="btn-primary py-3">
+                      <PlayCircle className="w-5 h-5 mr-2" />
+                      Start Free Access
+                    </Link>
+                  ) : (
+                    <Link href={`/register?next=/learn/${courseId}`} className="btn-primary py-3">
+                      <PlayCircle className="w-5 h-5 mr-2" />
+                      Create Account for Free Access
+                    </Link>
+                  )
+                ) : user ? (
+                  <Link href={`/checkout/${courseId}?type=course`} className="btn-primary py-3">
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    {promotion.discountPercentage > 0 ? (
+                      <span className="flex items-center gap-2">
+                        <span className="line-through opacity-60 text-sm">${course.price}</span>
+                        Buy for ${(Number(course.price) * (1 - promotion.discountPercentage / 100)).toFixed(2)}
+                      </span>
+                    ) : (
+                      `Buy Full Course for $${course.price}`
+                    )}
+                  </Link>
+                ) : (
+                  <Link href={`/register?next=/checkout/${courseId}?type=course`} className="btn-primary py-3">
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Create Account to Buy (${course.price})
+                  </Link>
                 )}
-                {!hasPurchased && (
+                {!hasPurchased && !promotion.isFree && (
                   <button
                     onClick={() => addItem({ id: courseId, type: 'course', title: course.title, price: Number(course.price), cover_image: course.cover_image })}
                     disabled={isInCart(courseId, 'course')}

@@ -3,6 +3,7 @@
 import { createClient as createServerClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/utils/certificates";
 import { LESSON_COMPLETE_XP, FIRST_LESSON_BADGE_CODE } from "@/utils/gamification";
+import { getCoursePromotionAction } from "@/app/portal-live/actions";
 import { revalidatePath } from "next/cache";
 
 // Human-readable, verifiable certificate number, e.g. HAN-7F3A9C21
@@ -52,15 +53,21 @@ export async function toggleLessonCompleteAction(
 
     const admin = getAdminClient();
 
-    // Only enrolled students can record progress.
+    // Enrolled students can record progress — as can anyone currently inside
+    // an active free-access promotion window for this course.
     const { data: purchase } = await admin
       .from("purchases")
       .select("id")
       .eq("user_id", user.id)
       .eq("course_id", courseId)
       .maybeSingle();
-    if (!purchase)
-      return { success: false, error: "You must purchase this course first." };
+
+    if (!purchase) {
+      const promo = await getCoursePromotionAction(courseId);
+      if (!promo.isFree) {
+        return { success: false, error: "You must purchase this course first." };
+      }
+    }
 
     let isNewCompletion = false;
     if (completed) {

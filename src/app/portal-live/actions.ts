@@ -576,3 +576,63 @@ export async function getActiveAnnouncementsAction(placement: string, courseId?:
     return { success: false, data: [] };
   }
 }
+
+export async function getCheckoutPriceAction(courseId: string, couponCode?: string | null) {
+  const failure = {
+    success: false as boolean,
+    basePrice: 0, finalPrice: 0, promoPct: 0, couponPct: 0, appliedPct: 0,
+    couponId: null as string | null, couponError: null as string | null, isFree: false,
+  };
+  try {
+    const { getEffectiveCoursePrice } = await import("@/utils/pricing");
+    const price = await getEffectiveCoursePrice(courseId, couponCode);
+    if (!price) return failure;
+    return { success: true, ...price };
+  } catch (error: any) {
+    console.error("Checkout Price Error:", error);
+    return failure;
+  }
+}
+
+const DISCOUNT_ANNOUNCEMENT_TYPES = ["discount", "flash_sale", "limited_time_offer"];
+
+// Resolves the strongest active promotion for a course from Announcements —
+// used to drive REAL access/pricing (free access bypass, discounted
+// checkout), not just banner display. Server-only source of truth: never
+// trust a client-reported discount.
+export async function getCoursePromotionAction(courseId: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const nowIso = new Date().toISOString();
+
+    const { data, error } = await supabaseAdmin
+      .from("announcements")
+      .select("*")
+      .eq("is_enabled", true)
+      .eq("course_id", courseId)
+      .lte("start_at", nowIso)
+      .or(`end_at.is.null,end_at.gt.${nowIso}`)
+      .in("announcement_type", ["free_course_promo", ...DISCOUNT_ANNOUNCEMENT_TYPES]);
+
+    if (error) throw new Error(error.message);
+    const rows = data || [];
+
+    const freePromo = rows.find((r: any) => r.announcement_type === "free_course_promo");
+    if (freePromo) {
+      return { success: true, isFree: true, discountPercentage: 100, endsAt: freePromo.end_at as string | null };
+    }
+
+    const discountPromo = rows
+      .filter((r: any) => DISCOUNT_ANNOUNCEMENT_TYPES.includes(r.announcement_type) && Number(r.discount_percentage) > 0)
+      .sort((a: any, b: any) => Number(b.discount_percentage) - Number(a.discount_percentage))[0];
+
+    if (discountPromo) {
+      return { success: true, isFree: false, discountPercentage: Number(discountPromo.discount_percentage), endsAt: discountPromo.end_at as string | null };
+    }
+
+    return { success: true, isFree: false, discountPercentage: 0, endsAt: null };
+  } catch (error: any) {
+    console.error("Course Promotion Fetch Error:", error);
+    return { success: true, isFree: false, discountPercentage: 0, endsAt: null };
+  }
+}
