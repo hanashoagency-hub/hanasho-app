@@ -167,6 +167,31 @@ export async function createLessonAction(moduleId: string, lessonData: any, cour
   }
 }
 
+export async function uploadLessonPdfAction(formData: FormData) {
+  try {
+    const file = formData.get("file") as File | null;
+    if (!file) return { success: false, error: "No file provided." };
+    if (file.type !== "application/pdf") return { success: false, error: "Only PDF files are allowed." };
+    if (file.size > 50 * 1024 * 1024) return { success: false, error: "PDF must be under 50MB." };
+
+    const supabaseAdmin = getAdminClient();
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const path = `${Date.now()}-${safeName}`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from("lesson-pdfs")
+      .upload(path, file, { contentType: "application/pdf", upsert: false });
+
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: publicUrlData } = supabaseAdmin.storage.from("lesson-pdfs").getPublicUrl(path);
+    return { success: true, url: publicUrlData.publicUrl, fileName: file.name };
+  } catch (error: any) {
+    console.error("Upload Lesson PDF Error:", error);
+    return { success: false, error: error.message || "Upload failed." };
+  }
+}
+
 export async function deleteLessonAction(id: string, courseId: string) {
   try {
     const supabaseAdmin = getAdminClient();

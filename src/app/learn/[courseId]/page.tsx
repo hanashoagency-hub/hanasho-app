@@ -36,6 +36,8 @@ export default function LearnPage() {
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentVideoId, setCurrentVideoId] = useState<string | null>(null);
+  const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null);
+  const [currentLessonType, setCurrentLessonType] = useState<'video' | 'pdf'>('video');
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
   const [currentLessonTitle, setCurrentLessonTitle] = useState("");
   const [currentLessonDesc, setCurrentLessonDesc] = useState("");
@@ -100,11 +102,13 @@ export default function LearnPage() {
   }, [courseId, router]);
 
   const playLesson = (lesson: any) => {
-    setCurrentVideoId(lesson.youtube_video_id);
+    setCurrentLessonType(lesson.lesson_type === 'pdf' ? 'pdf' : 'video');
+    setCurrentVideoId(lesson.youtube_video_id || null);
+    setCurrentPdfUrl(lesson.pdf_url || null);
     setCurrentLessonId(lesson.id);
     setCurrentLessonTitle(lesson.title);
     setCurrentLessonDesc(lesson.description || "In this lesson, you will learn new concepts related to this module.");
-    setActiveTab('content'); // switch to content tab when clicking a new video
+    setActiveTab('content'); // switch to content tab when clicking a new lesson
   };
 
   const toggleComplete = async () => {
@@ -224,11 +228,12 @@ export default function LearnPage() {
               >
                 <div className="px-2 pb-2">
                   {module.lessons.map((lesson: any) => {
-                    const isPlaying = currentVideoId === lesson.youtube_video_id;
+                    const isPlaying = currentLessonId === lesson.id;
                     const isCompleted = completedIds.has(lesson.id);
+                    const isPdf = lesson.lesson_type === 'pdf';
 
                     return (
-                      <button 
+                      <button
                         key={lesson.id}
                         onClick={() => playLesson(lesson)}
                         className={`
@@ -239,15 +244,15 @@ export default function LearnPage() {
                         <div className="flex items-center space-x-3 truncate">
                           {isCompleted ? (
                             <CheckCircle className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
-                          ) : isPlaying ? (
-                            <PlayCircle className="w-4 h-4 text-[var(--brand-primary)] flex-shrink-0" />
+                          ) : isPdf ? (
+                            <FileText className={`w-4 h-4 flex-shrink-0 ${isPlaying ? 'text-[var(--brand-primary)]' : ''}`} />
                           ) : (
-                            <PlayCircle className="w-4 h-4 flex-shrink-0" />
+                            <PlayCircle className={`w-4 h-4 flex-shrink-0 ${isPlaying ? 'text-[var(--brand-primary)]' : ''}`} />
                           )}
                           <span className={`truncate ${isPlaying ? 'font-bold' : ''}`}>{lesson.title}</span>
                         </div>
                         <span className={`text-xs flex-shrink-0 ml-2`}>
-                          {lesson.duration_minutes}m
+                          {isPdf ? 'PDF' : `${lesson.duration_minutes}m`}
                         </span>
                       </button>
                     )
@@ -284,27 +289,45 @@ export default function LearnPage() {
             </div>
           )}
 
-          {/* Video Player */}
-          <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
-            {currentVideoId ? (
+          {/* Lesson Viewer */}
+          {currentLessonType === 'pdf' && currentPdfUrl ? (
+            <div className="relative w-full h-[75vh] rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
               <iframe
-                src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
+                src={currentPdfUrl}
                 title={currentLessonTitle}
-                className="absolute inset-0 w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0 bg-white"
               ></iframe>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-secondary)]">
-                <div className="relative">
-                  <button className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border border-[var(--border-color)] flex items-center justify-center transition-all duration-300">
-                    <PlayCircle className="w-10 h-10 md:w-12 md:h-12 text-[var(--border-color)] ml-1.5" />
-                  </button>
+              <a
+                href={currentPdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-[12px] bg-[var(--brand-primary)] text-[var(--on-brand)] text-xs font-bold shadow-lg"
+              >
+                <Download className="w-3.5 h-3.5" /> Open in new tab
+              </a>
+            </div>
+          ) : (
+            <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
+              {currentVideoId ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${currentVideoId}?autoplay=1&rel=0`}
+                  title={currentLessonTitle}
+                  className="absolute inset-0 w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-secondary)]">
+                  <div className="relative">
+                    <button className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border border-[var(--border-color)] flex items-center justify-center transition-all duration-300">
+                      <PlayCircle className="w-10 h-10 md:w-12 md:h-12 text-[var(--border-color)] ml-1.5" />
+                    </button>
+                  </div>
+                  <p className="text-[var(--text-secondary)] text-sm font-bold">Select a lesson from the curriculum to start learning</p>
                 </div>
-                <p className="text-[var(--text-secondary)] text-sm font-bold">Select a lesson from the curriculum to start learning</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div className="mt-8 mb-6 flex items-center justify-between flex-wrap gap-4">
              <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">

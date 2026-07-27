@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Plus, Trash2, GripVertical, Play, ChevronDown, ChevronRight, Loader2, ArrowLeft, Edit, Check, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, Play, FileText, ChevronDown, ChevronRight, Loader2, ArrowLeft, Edit, Check, X, Upload } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { createModuleAction, deleteModuleAction, createLessonAction, deleteLessonAction, getAdminModulesWithLessonsAction } from "../../actions";
+import { createModuleAction, deleteModuleAction, createLessonAction, deleteLessonAction, getAdminModulesWithLessonsAction, uploadLessonPdfAction } from "../../actions";
 
 interface Module {
   id: string;
@@ -19,7 +19,9 @@ interface Lesson {
   id: string;
   title: string;
   description: string;
+  lesson_type: 'video' | 'pdf';
   youtube_video_id: string;
+  pdf_url: string;
   duration_minutes: number;
   is_preview: boolean;
   sort_order: number;
@@ -35,8 +37,34 @@ export default function CourseBuilderPage() {
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [addingModule, setAddingModule] = useState(false);
   const [addingLessonTo, setAddingLessonTo] = useState<string | null>(null);
-  const [lessonForm, setLessonForm] = useState({ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false });
+  const [lessonForm, setLessonForm] = useState({ title: "", lesson_type: "video" as 'video' | 'pdf', youtube_video_id: "", pdf_url: "", pdf_name: "", duration_minutes: 0, is_preview: false });
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState("");
   const supabase = createClient();
+
+  const resetLessonForm = () => setLessonForm({ title: "", lesson_type: "video", youtube_video_id: "", pdf_url: "", pdf_name: "", duration_minutes: 0, is_preview: false });
+
+  const handlePdfSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPdfError("");
+    setUploadingPdf(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await uploadLessonPdfAction(formData);
+      if (res.success && res.url) {
+        setLessonForm((f) => ({ ...f, pdf_url: res.url!, pdf_name: res.fileName || file.name }));
+      } else {
+        setPdfError(res.error || "Upload failed.");
+      }
+    } catch {
+      setPdfError("Upload failed. Please try again.");
+    } finally {
+      setUploadingPdf(false);
+      e.target.value = "";
+    }
+  };
 
   const fetchData = async () => {
     const res = await getAdminModulesWithLessonsAction(courseId);
@@ -73,17 +101,20 @@ export default function CourseBuilderPage() {
 
   const addLesson = async (moduleId: string) => {
     if (!lessonForm.title.trim()) return;
+    if (lessonForm.lesson_type === 'pdf' && !lessonForm.pdf_url) return;
     const mod = modules.find(m => m.id === moduleId);
-    
+
     await createLessonAction(moduleId, {
       title: lessonForm.title,
-      youtube_video_id: parseYoutubeId(lessonForm.youtube_video_id),
+      lesson_type: lessonForm.lesson_type,
+      youtube_video_id: lessonForm.lesson_type === 'video' ? parseYoutubeId(lessonForm.youtube_video_id) : null,
+      pdf_url: lessonForm.lesson_type === 'pdf' ? lessonForm.pdf_url : null,
       duration_minutes: lessonForm.duration_minutes,
       is_preview: lessonForm.is_preview,
       sort_order: mod ? mod.lessons.length : 0,
     }, courseId);
-    
-    setLessonForm({ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false });
+
+    resetLessonForm();
     setAddingLessonTo(null);
     fetchData();
   };
@@ -111,7 +142,7 @@ export default function CourseBuilderPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-heading font-bold text-white">{courseTitle}</h1>
-          <p className="text-white/50 mt-1">Curriculum Builder — Add modules and YouTube lessons</p>
+          <p className="text-white/50 mt-1">Curriculum Builder — Add modules, YouTube lessons, and PDF lessons</p>
         </div>
       </div>
 
@@ -139,10 +170,19 @@ export default function CourseBuilderPage() {
                 {mod.lessons.map((lesson, lessonIndex) => (
                   <div key={lesson.id} className="flex items-center gap-3 py-3 px-3 rounded-xl hover:bg-white/5 transition-colors group">
                     <span className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-sm font-bold text-white/30">{lessonIndex + 1}</span>
-                    <Play className="w-5 h-5 text-red-400" />
+                    {lesson.lesson_type === 'pdf' ? (
+                      <FileText className="w-5 h-5 text-blue-400" />
+                    ) : (
+                      <Play className="w-5 h-5 text-red-400" />
+                    )}
                     <div className="flex-1">
                       <p className="text-white font-medium text-sm">{lesson.title}</p>
-                      <p className="text-white/30 text-xs">{lesson.duration_minutes} min • {lesson.youtube_video_id || "No video"} {lesson.is_preview && <span className="text-green-400">• Free Preview</span>}</p>
+                      <p className="text-white/30 text-xs">
+                        {lesson.lesson_type === 'pdf'
+                          ? "PDF document"
+                          : `${lesson.duration_minutes} min • ${lesson.youtube_video_id || "No video"}`}
+                        {lesson.is_preview && <span className="text-green-400"> • Free Preview</span>}
+                      </p>
                     </div>
                     <button onClick={() => deleteLesson(lesson.id)} className="p-1.5 rounded-lg text-red-400/0 group-hover:text-red-400/50 hover:!text-red-400 hover:bg-red-500/10 transition-all">
                       <Trash2 className="w-3.5 h-3.5" />
@@ -154,21 +194,66 @@ export default function CourseBuilderPage() {
                 {addingLessonTo === mod.id ? (
                   <div className="mt-3 p-4 bg-white/5 rounded-xl border border-white/10 space-y-3">
                     <input value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="Lesson title" />
-                    <div className="grid grid-cols-2 gap-3">
-                      <input value={lessonForm.youtube_video_id} onChange={(e) => setLessonForm({ ...lessonForm, youtube_video_id: parseYoutubeId(e.target.value) })} className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="YouTube URL or Video ID" />
-                      <input type="number" value={lessonForm.duration_minutes} onChange={(e) => setLessonForm({ ...lessonForm, duration_minutes: parseInt(e.target.value) || 0 })} className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="Duration (min)" />
+
+                    <div className="flex gap-2">
+                      {(['video', 'pdf'] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setLessonForm({ ...lessonForm, lesson_type: t })}
+                          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm font-bold transition-colors ${
+                            lessonForm.lesson_type === t ? "bg-white/10 border-white text-white" : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10"
+                          }`}
+                        >
+                          {t === 'video' ? <Play className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                          {t === 'video' ? 'Video' : 'PDF'}
+                        </button>
+                      ))}
                     </div>
+
+                    {lessonForm.lesson_type === 'video' ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <input value={lessonForm.youtube_video_id} onChange={(e) => setLessonForm({ ...lessonForm, youtube_video_id: parseYoutubeId(e.target.value) })} className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="YouTube URL or Video ID" />
+                        <input type="number" value={lessonForm.duration_minutes} onChange={(e) => setLessonForm({ ...lessonForm, duration_minutes: parseInt(e.target.value) || 0 })} className="bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-white/20" placeholder="Duration (min)" />
+                      </div>
+                    ) : (
+                      <div>
+                        {pdfError && <p className="text-red-400 text-xs mb-2">{pdfError}</p>}
+                        {lessonForm.pdf_url ? (
+                          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-sm text-white">
+                            <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                            <span className="truncate flex-1">{lessonForm.pdf_name}</span>
+                            <button type="button" onClick={() => setLessonForm({ ...lessonForm, pdf_url: "", pdf_name: "" })} className="text-white/40 hover:text-red-400">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className={`flex items-center justify-center gap-2 py-3 rounded-lg border border-dashed text-sm cursor-pointer transition-colors ${uploadingPdf ? "border-white/10 text-white/30" : "border-white/20 text-white/50 hover:border-white/40 hover:text-white"}`}>
+                            {uploadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            {uploadingPdf ? "Uploading..." : "Click to upload PDF"}
+                            <input type="file" accept="application/pdf" onChange={handlePdfSelect} disabled={uploadingPdf} className="hidden" />
+                          </label>
+                        )}
+                      </div>
+                    )}
+
                     <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
                       <input type="checkbox" checked={lessonForm.is_preview} onChange={(e) => setLessonForm({ ...lessonForm, is_preview: e.target.checked })} className="rounded" />
                       Free Preview (visible without purchase)
                     </label>
                     <div className="flex gap-2">
-                      <button onClick={() => setAddingLessonTo(null)} className="flex-1 py-2 rounded-lg border border-white/10 text-white/60 text-sm hover:bg-white/5 transition-colors">Cancel</button>
-                      <button onClick={() => addLesson(mod.id)} disabled={!lessonForm.title.trim()} className="flex-1 py-2 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-50 hover:scale-[1.02] transition-transform">Add Lesson</button>
+                      <button onClick={() => { setAddingLessonTo(null); resetLessonForm(); setPdfError(""); }} className="flex-1 py-2 rounded-lg border border-white/10 text-white/60 text-sm hover:bg-white/5 transition-colors">Cancel</button>
+                      <button
+                        onClick={() => addLesson(mod.id)}
+                        disabled={!lessonForm.title.trim() || uploadingPdf || (lessonForm.lesson_type === 'pdf' && !lessonForm.pdf_url)}
+                        className="flex-1 py-2 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-50 hover:scale-[1.02] transition-transform"
+                      >
+                        Add Lesson
+                      </button>
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => { setAddingLessonTo(mod.id); setLessonForm({ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }); }} className="mt-3 flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors px-3 py-2">
+                  <button onClick={() => { setAddingLessonTo(mod.id); resetLessonForm(); setPdfError(""); }} className="mt-3 flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors px-3 py-2">
                     <Plus className="w-4 h-4" /> Add Lesson
                   </button>
                 )}
