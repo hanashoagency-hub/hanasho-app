@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 
+function ConfirmingState() {
+  return (
+    <>
+      <Loader2 className="w-12 h-12 text-white/50 mx-auto mb-6 animate-spin" />
+      <h2 className="text-2xl font-bold text-white mb-2">Confirming your payment...</h2>
+    </>
+  );
+}
+
 // Stripe redirects here after a 3D Secure bank challenge (cards that
 // don't need it never leave the checkout page). We just need to
 // re-confirm the PaymentIntent server-side and finish enrollment.
-export default function CartCheckoutCompletePage() {
+function CartCheckoutCompleteInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { clear } = useCart();
@@ -50,32 +59,37 @@ export default function CartCheckoutCompletePage() {
   }, [searchParams, router]);
 
   return (
+    <>
+      {status === "loading" && <ConfirmingState />}
+      {status === "success" && (
+        <>
+          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-green-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Payment Successful!</h2>
+          <p className="text-white/60">{message}</p>
+        </>
+      )}
+      {status === "error" && (
+        <>
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <XCircle className="w-10 h-10 text-red-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Payment Issue</h2>
+          <p className="text-white/60">{message}</p>
+        </>
+      )}
+    </>
+  );
+}
+
+export default function CartCheckoutCompletePage() {
+  return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
       <div className="text-center bg-[#0A0A0A] border border-white/10 rounded-3xl p-10 max-w-md w-full">
-        {status === "loading" && (
-          <>
-            <Loader2 className="w-12 h-12 text-white/50 mx-auto mb-6 animate-spin" />
-            <h2 className="text-2xl font-bold text-white mb-2">Confirming your payment...</h2>
-          </>
-        )}
-        {status === "success" && (
-          <>
-            <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Payment Successful!</h2>
-            <p className="text-white/60">{message}</p>
-          </>
-        )}
-        {status === "error" && (
-          <>
-            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <XCircle className="w-10 h-10 text-red-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Payment Issue</h2>
-            <p className="text-white/60">{message}</p>
-          </>
-        )}
+        <Suspense fallback={<ConfirmingState />}>
+          <CartCheckoutCompleteInner />
+        </Suspense>
       </div>
     </div>
   );
