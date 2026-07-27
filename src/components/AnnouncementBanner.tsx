@@ -126,8 +126,15 @@ export default function AnnouncementBanner({ placement, courseId }: { placement:
   const visible = announcements.filter((a) => !dismissed.has(a.id));
   if (visible.length === 0) return null;
 
+  // Placements that render at the very top of the page sit directly under the
+  // fixed header, so they need enough top padding to clear it (≈88px mobile /
+  // ≈104px desktop). Placements embedded lower in a page (course viewer,
+  // dashboard, checkout) already have their own offset, so keep it tight.
+  const TOP_OF_PAGE = ["site_wide", "homepage", "courses_page"];
+  const topPad = TOP_OF_PAGE.includes(placement) ? "pt-24 md:pt-28" : "pt-4";
+
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 space-y-3">
+    <div className={`mx-auto max-w-5xl px-4 sm:px-6 ${topPad} space-y-3`}>
       {visible.map((a) => (
         <BannerCard key={a.id} a={a} onDismiss={() => setDismissed((prev) => new Set(prev).add(a.id))} />
       ))}

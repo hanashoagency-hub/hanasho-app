@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
+import TutorialButton from "@/components/TutorialButton";
+import XirfadleAIWidget from "@/components/XirfadleAIWidget";
 
 export default function Home() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -375,6 +377,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Floating widgets — homepage only, per request */}
+      <TutorialButton />
+      <XirfadleAIWidget />
     </div>
   );
 }
