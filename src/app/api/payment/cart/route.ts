@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/utils/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { provisionTelegramAccessForPurchase } from '@/utils/telegramInvites';
+import { sendPurchaseReceipt } from '@/utils/email';
 
 const TABLE_BY_TYPE: Record<string, string> = {
   course: 'courses',
@@ -181,6 +183,35 @@ export async function POST(request: Request) {
         success: false,
         error: `Your payment went through, but we couldn't confirm enrollment for every item automatically. Please contact support with reference ${referenceId} and we'll unlock everything right away.`,
       }, { status: 500 });
+    }
+
+    {
+      const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      const firstName = profile?.full_name?.split(' ')[0] || 'there';
+
+      for (const item of payableItems) {
+        if (item.itemType === 'course') {
+          await provisionTelegramAccessForPurchase({
+            userId: user.id,
+            userEmail: user.email,
+            userName: profile?.full_name,
+            courseId: item.itemId,
+          });
+        }
+
+        if (user.email) {
+          const table = TABLE_BY_TYPE[item.itemType] || 'courses';
+          const { data: itemRow } = await supabaseAdmin.from(table).select('title').eq('id', item.itemId).maybeSingle();
+          await sendPurchaseReceipt({
+            to: user.email,
+            firstName,
+            itemTitle: itemRow?.title || 'Your purchase',
+            amount: item.price,
+            currency,
+            referenceId,
+          });
+        }
+      }
     }
 
     return NextResponse.json({

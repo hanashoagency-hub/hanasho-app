@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/utils/certificates";
+import { provisionTelegramAccessForPurchase } from "@/utils/telegramInvites";
+import { sendPurchaseReceipt } from "@/utils/email";
 
 const TABLE_BY_TYPE: Record<string, string> = {
   course: "courses",
@@ -57,11 +59,13 @@ export async function POST(request: Request) {
     // client-controlled), splitting the single charge across N purchase
     // rows with unique reference_ids — same pattern as the WaafiPay cart route.
     let anyRpcError = false;
+    const receiptItems: { itemType: string; itemId: string; title: string; price: number }[] = [];
     for (let i = 0; i < parsedItems.length; i++) {
       const { itemType, itemId } = parsedItems[i];
       const table = TABLE_BY_TYPE[itemType];
-      const { data: itemRow } = await admin.from(table).select("price").eq("id", itemId).maybeSingle();
+      const { data: itemRow } = await admin.from(table).select("title, price").eq("id", itemId).maybeSingle();
       const price = Number(itemRow?.price) || 0;
+      receiptItems.push({ itemType, itemId, title: itemRow?.title || "Your purchase", price });
 
       const { error: rpcErr } = await admin.rpc("complete_purchase", {
         p_user_id: user.id,
@@ -89,6 +93,33 @@ export async function POST(request: Request) {
         success: false,
         error: `Your card was charged, but we couldn't confirm enrollment for every item automatically. Please contact support with reference ${intent.id} and we'll unlock everything right away.`,
       }, { status: 500 });
+    }
+
+    {
+      const { data: profile } = await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+      const firstName = profile?.full_name?.split(" ")[0] || "there";
+
+      for (const item of receiptItems) {
+        if (item.itemType === "course") {
+          await provisionTelegramAccessForPurchase({
+            userId: user.id,
+            userEmail: user.email,
+            userName: profile?.full_name,
+            courseId: item.itemId,
+          });
+        }
+
+        if (user.email) {
+          await sendPurchaseReceipt({
+            to: user.email,
+            firstName,
+            itemTitle: item.title,
+            amount: item.price,
+            currency: intent.currency.toUpperCase(),
+            referenceId: intent.id,
+          });
+        }
+      }
     }
 
     return NextResponse.json({

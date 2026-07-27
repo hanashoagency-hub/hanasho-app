@@ -8,6 +8,7 @@ import { createClient } from "@/utils/supabase/client";
 import { checkPurchaseStatusAction } from "@/app/portal-live/actions";
 import { useCart } from "@/components/CartProvider";
 import StripeCartCheckout from "@/components/StripeCartCheckout";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 function MastercardIcon() {
   return (
@@ -138,6 +139,7 @@ export default function CartCheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] font-sans selection:bg-white/20 pt-24 pb-20">
+      <AnnouncementBanner placement="checkout" />
       <div className="max-w-4xl mx-auto px-6">
         <Link href="/cart" className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-8 text-sm font-medium">
           <ArrowLeft className="w-4 h-4" /> Back to cart

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient as createServerClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/utils/certificates";
+import { provisionTelegramAccessForPurchase } from "@/utils/telegramInvites";
+import { sendPurchaseReceipt } from "@/utils/email";
 
 export async function POST(request: Request) {
   try {
@@ -70,6 +72,31 @@ export async function POST(request: Request) {
     }
 
     const alreadyOwned = purchaseResult?.[0]?.already_owned;
+
+    if (!alreadyOwned) {
+      const { data: profile } = await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+      const firstName = profile?.full_name?.split(" ")[0] || "there";
+
+      await provisionTelegramAccessForPurchase({
+        userId: user.id,
+        userEmail: user.email,
+        userName: profile?.full_name,
+        courseId,
+      });
+
+      if (user.email) {
+        const { data: course } = await admin.from("courses").select("title").eq("id", courseId).maybeSingle();
+        await sendPurchaseReceipt({
+          to: user.email,
+          firstName,
+          itemTitle: course?.title || "Your course",
+          amount: intent.amount / 100,
+          currency: intent.currency.toUpperCase(),
+          referenceId: intent.id,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: alreadyOwned ? "Payment successful, course already owned!" : "Payment successful, course unlocked!",

@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FloatingDock from "@/components/navigation/FloatingDock";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 import TelegramPopup from "@/components/TelegramPopup";
 import XirfadleAIWidget from "@/components/XirfadleAIWidget";
 import ThemeProvider from "@/components/ThemeProvider";
@@ -65,6 +66,7 @@ export default function RootLayout({
               <RainBackground />
 
               <Header />
+              <AnnouncementBanner placement="site_wide" />
               {children}
               <Footer />
               {/* Reserves scroll space so the floating dock never overlaps the last bit of footer content */}

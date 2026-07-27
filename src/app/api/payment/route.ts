@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/utils/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import { provisionTelegramAccessForPurchase } from '@/utils/telegramInvites';
+import { sendPurchaseReceipt } from '@/utils/email';
+
+const RECEIPT_TABLE_BY_TYPE: Record<string, string> = {
+  course: 'courses',
+  book: 'books',
+  diploma: 'diplomas',
+  zoom: 'zoom_classes',
+};
 
 export async function POST(request: Request) {
   try {
@@ -143,6 +152,34 @@ export async function POST(request: Request) {
     }
 
     const alreadyOwned = purchaseResult?.[0]?.already_owned;
+
+    if (!alreadyOwned) {
+      const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      const firstName = profile?.full_name?.split(' ')[0] || 'there';
+
+      if (itemType === 'course') {
+        await provisionTelegramAccessForPurchase({
+          userId: user.id,
+          userEmail: user.email,
+          userName: profile?.full_name,
+          courseId: targetItemId,
+        });
+      }
+
+      if (user.email) {
+        const table = RECEIPT_TABLE_BY_TYPE[itemType] || 'courses';
+        const { data: item } = await supabaseAdmin.from(table).select('title').eq('id', targetItemId).maybeSingle();
+        await sendPurchaseReceipt({
+          to: user.email,
+          firstName,
+          itemTitle: item?.title || 'Your purchase',
+          amount: Number(amount),
+          currency,
+          referenceId,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: alreadyOwned ? 'Payment successful, item already owned!' : 'Payment successful, item unlocked!',

@@ -2,21 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
+import {
   PlayCircle,
   BookOpen,
   Loader2,
   ArrowRight,
   Star,
-  CheckCircle
+  CheckCircle,
+  Users
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-import { getPublicCoursesAction, checkPurchaseStatusAction } from "@/app/portal-live/actions";
+import { getPublicCoursesAction, checkPurchaseStatusAction, getCourseEnrollmentCountsAction } from "@/app/portal-live/actions";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 export default function CoursesCatalogPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [reviewsStats, setReviewsStats] = useState<Record<string, { avg: string, count: number }>>({});
+  const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const supabase = createClient();
@@ -55,6 +58,10 @@ export default function CoursesCatalogPage() {
         }
       }
 
+      // Fetch total enrolled-student counts per course
+      const countsRes = await getCourseEnrollmentCountsAction();
+      if (countsRes.success) setEnrollmentCounts(countsRes.counts);
+
       // Check purchase status for logged-in user
       const { data: { user } } = await supabase.auth.getUser();
       if (user && res.success && res.data) {
@@ -76,6 +83,7 @@ export default function CoursesCatalogPage() {
 
   return (
     <div className="min-h-screen bg-transparent pb-24 relative overflow-hidden">
+      <AnnouncementBanner placement="courses_page" />
       {/* Header */}
       <div className="relative pt-32 pb-16 px-6">
         <div className="max-w-7xl mx-auto text-center relative z-10">
@@ -142,10 +150,16 @@ export default function CoursesCatalogPage() {
                 <div className="p-6 flex flex-col flex-grow">
                   <h3 className="font-heading text-xl font-bold text-[var(--text-primary)] mb-2 line-clamp-2 leading-snug">{course.title}</h3>
                   
-                  <div className="flex items-center text-sm mb-4">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                    <span className="text-[var(--text-primary)] font-bold mr-1">{stats?.avg || "New"}</span>
-                    <span className="text-[var(--text-secondary)]">({stats?.count || 0} reviews)</span>
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-sm mb-4">
+                    <div className="flex items-center">
+                      <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                      <span className="text-[var(--text-primary)] font-bold mr-1">{stats?.avg || "New"}</span>
+                      <span className="text-[var(--text-secondary)]">({stats?.count || 0} reviews)</span>
+                    </div>
+                    <div className="flex items-center text-[var(--text-secondary)]">
+                      <Users className="w-4 h-4 mr-1" />
+                      <span>{enrollmentCounts[course.id] || 0} enrolled</span>
+                    </div>
                   </div>
 
                   <p className="text-sm text-[var(--text-secondary)] mb-8 line-clamp-3 flex-grow leading-relaxed">{course.description}</p>

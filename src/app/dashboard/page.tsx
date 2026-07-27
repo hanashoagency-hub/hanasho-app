@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getAdminClient } from "@/utils/certificates";
 import Link from "next/link";
 import RewardsWidget from "@/components/RewardsWidget";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -110,6 +111,9 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      <div className="mb-6">
+        <AnnouncementBanner placement="dashboard" />
+      </div>
       <header className="mb-10">
         <h1 className="text-3xl font-heading font-bold text-[var(--text-primary)] mb-2">My Learning Dashboard</h1>
         <p className="text-[var(--text-secondary)]">Pick up where you left off and track your progress.</p>

@@ -279,6 +279,28 @@ export async function getPublicCoursesAction() {
   }
 }
 
+export async function getCourseEnrollmentCountsAction() {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("purchases")
+      .select("course_id");
+
+    if (error) throw new Error(error.message);
+
+    const counts: Record<string, number> = {};
+    (data || []).forEach((row: any) => {
+      if (!row.course_id) return;
+      counts[row.course_id] = (counts[row.course_id] || 0) + 1;
+    });
+
+    return { success: true, counts };
+  } catch (error: any) {
+    console.error("Course Enrollment Counts Error:", error);
+    return { success: false, counts: {} as Record<string, number> };
+  }
+}
+
 export async function getPublicBooksAction() {
   try {
     const supabaseAdmin = getAdminClient();
@@ -523,5 +545,34 @@ export async function getAdminStatsAction() {
   } catch (error: any) {
     console.error("Admin Stats Fetch Error:", error);
     return { success: false, studentCount: 0, courseCount: 0, totalRevenue: 0, totalTransactions: 0 };
+  }
+}
+
+export async function getActiveAnnouncementsAction(placement: string, courseId?: string) {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const nowIso = new Date().toISOString();
+
+    let query = supabaseAdmin
+      .from("announcements")
+      .select("*")
+      .eq("is_enabled", true)
+      .lte("start_at", nowIso)
+      .or(`end_at.is.null,end_at.gt.${nowIso}`)
+      .order("is_pinned", { ascending: false })
+      .order("priority", { ascending: false });
+
+    if (placement === "course_page" && courseId) {
+      query = query.eq("placement", "course_page").eq("course_id", courseId);
+    } else {
+      query = query.eq("placement", placement);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return { success: true, data: data || [] };
+  } catch (error: any) {
+    console.error("Active Announcements Fetch Error:", error);
+    return { success: false, data: [] };
   }
 }

@@ -6,6 +6,7 @@ import { ShieldCheck, Loader2, ArrowLeft, CheckCircle, CreditCard, Lock } from "
 import { createClient } from "@/utils/supabase/client";
 import { getCheckoutItemAction } from "@/app/portal-live/actions";
 import StripeCardCheckout from "@/components/StripeCardCheckout";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 import Link from "next/link";
 
 function MastercardIcon() {
@@ -145,6 +146,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#050505] font-sans selection:bg-white/20 pt-24 pb-20">
+      <AnnouncementBanner placement="checkout" />
       <div className="max-w-4xl mx-auto px-6">
         <Link href={itemType === "course" ? `/courses/${itemId}` : itemType === "diploma" ? `/diplomas/${itemId}` : itemType === "book" ? `/books/${itemId}` : `/live-classes/${itemId}`} className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-8 text-sm font-medium">
           <ArrowLeft className="w-4 h-4" /> Back to details

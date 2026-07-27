@@ -24,6 +24,7 @@ import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
 import { getPublicCourseDetailsAction, checkPurchaseStatusAction } from '@/app/portal-live/actions';
 import { useCart } from '@/components/CartProvider';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 import Link from 'next/link';
 import CourseReviewSection from './CourseReviewSection';
 
@@ -214,6 +215,10 @@ export default function CoursePage() {
       {/* Main Content Area */}
       <main className="flex-1 h-[calc(100vh-72px)] md:h-screen overflow-y-auto bg-[var(--bg-primary)] pt-10 md:pt-24" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <div className="max-w-[1400px] mx-auto p-4 md:p-8 lg:p-10">
+
+          <div className="mb-6 -mx-4 md:-mx-8 lg:-mx-10">
+            <AnnouncementBanner placement="course_page" courseId={courseId} />
+          </div>
 
           {/* Course Cover Image Placeholder instead of Video Player */}
           <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
