@@ -653,6 +653,33 @@ export async function checkCourseAccessAction(userId: string, courseId: string) 
   }
 }
 
+export async function getMySubscriptionAction(courseId: string) {
+  try {
+    const { createClient: createServerClient } = await import("@/utils/supabase/server");
+    const supabaseServer = await createServerClient();
+    const { data: { user } } = await supabaseServer.auth.getUser();
+
+    const { getSubscriptionPricing } = await import("@/utils/subscription");
+    const pricing = await getSubscriptionPricing(courseId, user?.id ?? null);
+
+    if (!user) return { success: true, subscription: null, pricing };
+
+    const admin = getAdminClient();
+    const { data: sub } = await admin
+      .from("course_subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("course_id", courseId)
+      .maybeSingle();
+
+    const active = sub ? new Date(sub.current_period_end).getTime() > Date.now() && sub.status !== "cancelled" : false;
+    return { success: true, subscription: sub ? { ...sub, active } : null, pricing };
+  } catch (error: any) {
+    console.error("Get My Subscription Error:", error);
+    return { success: false, subscription: null, pricing: null };
+  }
+}
+
 export async function getCheckoutPriceAction(courseId: string, couponCode?: string | null) {
   const failure = {
     success: false as boolean,

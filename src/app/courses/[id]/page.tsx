@@ -306,6 +306,16 @@ export default function CoursePage() {
                     Create Account to Buy (${course.price})
                   </Link>
                 )}
+
+                {/* Monthly subscription option (when enabled and not free/owned) */}
+                {!hasPurchased && !promotion.isFree && course.offers_subscription && Number(course.monthly_price) > 0 && (
+                  <Link
+                    href={user ? `/checkout/${courseId}?type=course&plan=subscription` : `/register?next=/checkout/${courseId}?type=course&plan=subscription`}
+                    className="flex items-center px-6 py-3 rounded-[20px] bg-[var(--bg-secondary)] border border-[var(--border-color)] font-bold hover:border-[var(--brand-primary)] transition-all"
+                  >
+                    Subscribe Monthly — from ${(Number(course.monthly_price) * 0.5).toFixed(2)}/mo
+                  </Link>
+                )}
                 {!hasPurchased && !promotion.isFree && (
                   <button
                     onClick={() => addItem({ id: courseId, type: 'course', title: course.title, price: Number(course.price), cover_image: course.cover_image })}

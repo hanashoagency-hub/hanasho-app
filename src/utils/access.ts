@@ -36,6 +36,12 @@ export async function hasContentAccess(userId: string, contentKind: "course" | "
     .maybeSingle();
   if (grant && notExpired(grant.expires_at)) return true;
 
+  // An active monthly subscription grants course access for its period.
+  if (contentKind === "course") {
+    const { hasActiveSubscription } = await import("@/utils/subscription");
+    if (await hasActiveSubscription(userId, itemId)) return true;
+  }
+
   return false;
 }
 

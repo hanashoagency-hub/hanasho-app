@@ -53,9 +53,10 @@ export default function AdminCoursesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   
-  const defaultForm = { 
+  const defaultForm = {
     title: "", description: "", cover_image: "", price: 0, currency: "USD",
     total_hours: 0, total_lessons: 0, benefits: "", materials_included: "",
+    offers_subscription: false, monthly_price: 0,
     lessons: [{ title: "", youtube_video_id: "", duration_minutes: 0, is_preview: false }]
   };
   
@@ -148,6 +149,8 @@ export default function AdminCoursesPage() {
       price: course.price, currency: course.currency,
       total_hours: course.total_hours || 0, total_lessons: course.total_lessons || 0,
       benefits: course.benefits || "", materials_included: course.materials_included || "",
+      offers_subscription: (course as any).offers_subscription || false,
+      monthly_price: (course as any).monthly_price || 0,
       lessons: [] // Lessons are managed via Curriculum Builder for existing courses
     });
     setShowModal(true);
@@ -374,7 +377,24 @@ export default function AdminCoursesPage() {
                   </select>
                 </div>
               </div>
-              
+
+              {/* Subscription option */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                <label className="flex items-center gap-2 text-sm text-white/80 cursor-pointer font-medium">
+                  <input type="checkbox" checked={form.offers_subscription} onChange={(e) => setForm({ ...form, offers_subscription: e.target.checked })} className="rounded" />
+                  Offer a monthly subscription option for this course
+                </label>
+                {form.offers_subscription && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-300 block mb-1">Monthly Price ($)</label>
+                    <input type="number" value={form.monthly_price} onChange={(e) => setForm({ ...form, monthly_price: parseFloat(e.target.value) || 0 })} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="e.g. 20" />
+                    <p className="text-xs text-white/40 mt-2 leading-relaxed">
+                      Students get 50% off the first month, then 60% off every renewal. The full <strong className="text-white/70">Price</strong> above stays the one-time lifetime option (includes VIP Telegram). Monthly access lasts 30 days and locks if not renewed.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-300 block mb-1">Total Lessons</label>

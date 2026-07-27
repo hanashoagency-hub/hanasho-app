@@ -88,12 +88,14 @@ export default function StripeCardCheckout({
   courseId,
   amount,
   couponCode,
+  plan,
   onSuccess,
   onError,
 }: {
   courseId: string;
   amount: number;
   couponCode?: string | null;
+  plan?: "lifetime" | "subscription";
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
 }) {
@@ -108,7 +110,7 @@ export default function StripeCardCheckout({
         const res = await fetch("/api/stripe/create-payment-intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ courseId, couponCode }),
+          body: JSON.stringify({ courseId, couponCode, plan }),
         });
         const data = await res.json();
         if (cancelled) return;

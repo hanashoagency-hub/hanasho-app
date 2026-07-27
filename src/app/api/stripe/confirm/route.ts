@@ -42,6 +42,39 @@ export async function POST(request: Request) {
     const isSuccess = intent.status === "succeeded";
     const admin = getAdminClient();
 
+    // ---- Subscription path: time-boxed access, no permanent purchase, no VIP ----
+    if (intent.metadata?.plan === "subscription") {
+      const { data: subResult, error: subErr } = await admin.rpc("complete_subscription", {
+        p_user_id: user.id,
+        p_course_id: courseId,
+        p_amount: intent.amount / 100,
+        p_currency: intent.currency.toUpperCase(),
+        p_payment_method: "sub_card",
+        p_phone_number: null,
+        p_reference_id: intent.id,
+        p_status: isSuccess ? "success" : "failed",
+        p_gateway_response: intent,
+      });
+      if (subErr) {
+        console.error(`[stripe] complete_subscription RPC failed (pi ${intent.id}, user ${user.id}):`, subErr);
+        if (isSuccess) {
+          return NextResponse.json({
+            success: false,
+            error: `Your card was charged, but we couldn't activate your subscription automatically. Please contact support with reference ${intent.id}.`,
+          }, { status: 500 });
+        }
+        return NextResponse.json({ success: false, error: "Payment failed or was declined." }, { status: 400 });
+      }
+      if (!isSuccess) {
+        return NextResponse.json({ success: false, error: "Payment failed or was declined." }, { status: 400 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: "Subscription active! You have 30 days of access.",
+        periodEnd: subResult?.[0]?.period_end,
+      });
+    }
+
     // Same atomic function used by the WaafiPay flow — reused as-is so
     // there's a single source of truth for "save transaction + grant
     // access" regardless of payment provider.

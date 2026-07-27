@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck, Loader2, ArrowLeft, CheckCircle, CreditCard, Lock } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { getCheckoutItemAction, getCheckoutPriceAction } from "@/app/portal-live/actions";
+import { getCheckoutItemAction, getCheckoutPriceAction, getMySubscriptionAction } from "@/app/portal-live/actions";
 import StripeCardCheckout from "@/components/StripeCardCheckout";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import Link from "next/link";
@@ -53,7 +53,16 @@ export default function CheckoutPage() {
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [pricing, setPricing] = useState<{ basePrice: number; finalPrice: number; appliedPct: number } | null>(null);
 
-  const effectivePrice = itemType === "course" && pricing ? pricing.finalPrice : Number(item?.price || 0);
+  // Subscription plan selection (courses that offer it)
+  const [plan, setPlan] = useState<"lifetime" | "subscription">(searchParams.get("plan") === "subscription" ? "subscription" : "lifetime");
+  const [subPricing, setSubPricing] = useState<{ monthlyBase: number; price: number; discountPct: number; isRenewal: boolean } | null>(null);
+  const offersSubscription = itemType === "course" && !!item?.offers_subscription;
+
+  const effectivePrice = plan === "subscription" && subPricing
+    ? subPricing.price
+    : itemType === "course" && pricing
+      ? pricing.finalPrice
+      : Number(item?.price || 0);
 
   const refreshPricing = async (coupon: string | null) => {
     if (itemType !== "course") return;
@@ -120,6 +129,15 @@ export default function CheckoutPage() {
         if (priceRes.success) {
           setPricing({ basePrice: priceRes.basePrice!, finalPrice: priceRes.finalPrice!, appliedPct: priceRes.appliedPct! });
         }
+        const subRes = await getMySubscriptionAction(itemId);
+        if (subRes.success && subRes.pricing?.offersSubscription) {
+          setSubPricing({
+            monthlyBase: subRes.pricing.monthlyBase,
+            price: subRes.pricing.price,
+            discountPct: subRes.pricing.discountPct,
+            isRenewal: subRes.pricing.isRenewal,
+          });
+        }
       }
 
       setLoading(false);
@@ -147,7 +165,8 @@ export default function CheckoutPage() {
           phoneNumber: "252" + phone.replace(/^0+/, ''), // Format for WaafiPay
           amount: effectivePrice,
           couponCode: appliedCoupon,
-          paymentMethod
+          paymentMethod,
+          plan
         })
       });
 
@@ -198,6 +217,37 @@ export default function CheckoutPage() {
 
         <h1 className="text-3xl font-bold text-white mb-8 tracking-tight">Secure Checkout</h1>
 
+        {offersSubscription && subPricing && (
+          <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => { setPlan("lifetime"); setError(""); }}
+              className={`text-left p-5 rounded-2xl border transition-all ${plan === "lifetime" ? "bg-white/10 border-white" : "bg-white/5 border-white/10 hover:bg-white/10"}`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-white">Lifetime Access</span>
+                <span className="text-lg font-bold text-white">${(pricing?.finalPrice ?? Number(item.price)).toFixed(2)}</span>
+              </div>
+              <p className="text-xs text-white/50">Pay once, keep forever. Includes VIP Telegram membership.</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setPlan("subscription"); setError(""); }}
+              className={`text-left p-5 rounded-2xl border transition-all ${plan === "subscription" ? "bg-white/10 border-white" : "bg-white/5 border-white/10 hover:bg-white/10"}`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-white">Monthly</span>
+                <span className="text-lg font-bold text-white">
+                  ${subPricing.price.toFixed(2)}<span className="text-xs text-white/50 font-normal">/mo</span>
+                </span>
+              </div>
+              <p className="text-xs text-white/50">
+                {subPricing.isRenewal ? `${subPricing.discountPct}% off renewal` : `${subPricing.discountPct}% off first month`} · 30 days access · no VIP Telegram
+              </p>
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Payment Form */}
           <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
@@ -247,7 +297,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {itemType === "course" && (
+              {itemType === "course" && plan !== "subscription" && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Coupon Code (optional)</label>
                   <div className="flex gap-2">
@@ -274,10 +324,11 @@ export default function CheckoutPage() {
 
               {paymentMethod === 'card' ? (
                 <StripeCardCheckout
-                  key={appliedCoupon || "no-coupon"}
+                  key={`${plan}-${appliedCoupon || "no-coupon"}`}
                   courseId={itemId}
                   amount={effectivePrice}
-                  couponCode={appliedCoupon}
+                  couponCode={plan === "subscription" ? null : appliedCoupon}
+                  plan={plan}
                   onSuccess={(msg) => {
                     setSuccess(true);
                     setTimeout(() => router.push('/dashboard'), 3000);
@@ -337,20 +388,37 @@ export default function CheckoutPage() {
               )}
               <div>
                 <h3 className="font-bold text-white">{item.title}</h3>
-                <p className="text-sm text-white/50">{itemType === "course" ? "Full Lifetime Access" : "Premium Access"}</p>
+                <p className="text-sm text-white/50">
+                  {plan === "subscription"
+                    ? "Monthly subscription — 30 days access"
+                    : itemType === "course" ? "Full Lifetime Access + VIP Telegram" : "Premium Access"}
+                </p>
               </div>
             </div>
-            
-            <div className="space-y-3 text-sm mb-6 pb-6 border-b border-white/10">
-              <div className="flex justify-between text-white/70">
-                <span>Original Price</span>
-                <span>${Number(item.price).toFixed(2)}</span>
+
+            {plan === "subscription" && subPricing ? (
+              <div className="space-y-3 text-sm mb-6 pb-6 border-b border-white/10">
+                <div className="flex justify-between text-white/70">
+                  <span>Monthly price</span>
+                  <span>${subPricing.monthlyBase.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-white/70">
+                  <span>{subPricing.isRenewal ? "Renewal discount" : "First-month discount"} ({subPricing.discountPct}%)</span>
+                  <span className="text-green-400">-${(subPricing.monthlyBase - effectivePrice).toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-white/70">
-                <span>Discount{pricing && pricing.appliedPct > 0 ? ` (${pricing.appliedPct}%)` : ""}</span>
-                <span className="text-green-400">-${(Number(item.price) - effectivePrice).toFixed(2)}</span>
+            ) : (
+              <div className="space-y-3 text-sm mb-6 pb-6 border-b border-white/10">
+                <div className="flex justify-between text-white/70">
+                  <span>Original Price</span>
+                  <span>${Number(item.price).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-white/70">
+                  <span>Discount{pricing && pricing.appliedPct > 0 ? ` (${pricing.appliedPct}%)` : ""}</span>
+                  <span className="text-green-400">-${(Number(item.price) - effectivePrice).toFixed(2)}</span>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex justify-between items-center mb-8">
               <span className="text-lg font-bold text-white">Total</span>

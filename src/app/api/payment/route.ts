@@ -56,19 +56,30 @@ export async function POST(request: Request) {
     );
 
     const body = await request.json();
-    const { itemId, itemType = 'course', phoneNumber, amount, paymentMethod, couponCode } = body;
+    const { itemId, itemType = 'course', phoneNumber, amount, paymentMethod, couponCode, plan } = body;
     const targetItemId = itemId || body.courseId;
+    const isSubscription = plan === 'subscription' && itemType === 'course';
 
     if (!targetItemId || !phoneNumber || !amount || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // For courses, the charge amount is always recomputed server-side
-    // (base price + any active promotion/coupon) — the client's amount is
-    // display-only and never trusted.
+    // Charge amount is always recomputed server-side — the client's amount is
+    // display-only and never trusted. Subscriptions price off the monthly
+    // rate + stepped discount; lifetime/one-time prices off base + promo/coupon.
     let chargeAmount = Number(amount);
     let redeemableCouponId: string | null = null;
-    if (itemType === 'course') {
+    if (isSubscription) {
+      const { getSubscriptionPricing } = await import('@/utils/subscription');
+      const sub = await getSubscriptionPricing(targetItemId, user.id);
+      if (!sub || !sub.offersSubscription) {
+        return NextResponse.json({ error: 'This course does not offer a monthly subscription.' }, { status: 400 });
+      }
+      if (sub.price <= 0) {
+        return NextResponse.json({ error: 'This subscription does not have a valid price.' }, { status: 400 });
+      }
+      chargeAmount = sub.price;
+    } else if (itemType === 'course') {
       const effective = await getEffectiveCoursePrice(targetItemId, couponCode);
       if (!effective) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -125,6 +136,57 @@ export async function POST(request: Request) {
     console.log("WaafiPay Response:", JSON.stringify(data));
 
     const isSuccess = data.responseCode === '2001';
+
+    // ---- Subscription path: time-boxed access, no permanent purchase, no VIP ----
+    if (isSubscription) {
+      const subMethod = `sub_${paymentMethod}`;
+      const { data: subResult, error: subErr } = await supabaseAdmin.rpc('complete_subscription', {
+        p_user_id: user.id,
+        p_course_id: targetItemId,
+        p_amount: chargeAmount,
+        p_currency: currency,
+        p_payment_method: subMethod,
+        p_phone_number: phoneNumber,
+        p_reference_id: referenceId,
+        p_status: isSuccess ? 'success' : 'failed',
+        p_gateway_response: data,
+      });
+
+      if (subErr) {
+        console.error(`[payment] complete_subscription RPC failed (ref ${referenceId}, user ${user.id}, course ${targetItemId}):`, subErr);
+        if (isSuccess) {
+          return NextResponse.json({
+            success: false,
+            error: `Your payment went through, but we couldn't activate your subscription automatically. Please contact support with reference ${referenceId}.`,
+          }, { status: 500 });
+        }
+        return NextResponse.json({ success: false, error: data.responseMsg || 'Payment failed or rejected' }, { status: 400 });
+      }
+
+      if (!isSuccess) {
+        return NextResponse.json({ success: false, error: data.responseMsg || 'Payment failed or rejected' }, { status: 400 });
+      }
+
+      if (user.email) {
+        const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+        const { data: course } = await supabaseAdmin.from('courses').select('title').eq('id', targetItemId).maybeSingle();
+        await sendPurchaseReceipt({
+          to: user.email,
+          firstName: profile?.full_name?.split(' ')[0] || 'there',
+          itemTitle: `${course?.title || 'Course'} — Monthly Subscription`,
+          amount: chargeAmount,
+          currency,
+          referenceId,
+        });
+      }
+
+      const periodEnd = subResult?.[0]?.period_end;
+      return NextResponse.json({
+        success: true,
+        message: 'Subscription active! You have 30 days of access.',
+        periodEnd,
+      });
+    }
 
     // Atomically save the transaction + (on success) the purchase record.
     // This runs as a single SECURITY DEFINER function call server-side,
