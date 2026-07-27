@@ -180,7 +180,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
       </div>
 
-      <nav className={`flex-1 p-4 space-y-2 ${isDesktop && isCollapsed ? 'px-2' : ''}`}>
+      <nav className={`flex-1 p-4 space-y-2 overflow-y-auto ${isDesktop && isCollapsed ? 'px-2' : ''}`} style={{ scrollbarWidth: 'thin' }}>
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/portal-live" && pathname.startsWith(item.href));
           return (

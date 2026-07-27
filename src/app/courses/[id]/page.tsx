@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
-import { getPublicCourseDetailsAction, checkPurchaseStatusAction, getCoursePromotionAction } from '@/app/portal-live/actions';
+import { getPublicCourseDetailsAction, checkPurchaseStatusAction, getCoursePromotionAction, enrollFreeCourseAction } from '@/app/portal-live/actions';
 import { useCart } from '@/components/CartProvider';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import Link from 'next/link';
@@ -51,6 +51,22 @@ export default function CoursePage() {
 
   // Free preview modal
   const [previewLesson, setPreviewLesson] = useState<any>(null);
+
+  // Free-promo enrollment
+  const [enrollingFree, setEnrollingFree] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+
+  const handleEnrollFree = async () => {
+    setEnrollingFree(true);
+    const res = await enrollFreeCourseAction(courseId);
+    setEnrollingFree(false);
+    if (res.success) {
+      setHasPurchased(true);
+      setShowCongrats(true);
+    } else {
+      alert(res.error || "Could not enroll. Please try again.");
+    }
+  };
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -262,12 +278,12 @@ export default function CoursePage() {
                   </Link>
                 ) : promotion.isFree ? (
                   user ? (
-                    <Link href={`/learn/${courseId}`} className="btn-primary py-3">
-                      <PlayCircle className="w-5 h-5 mr-2" />
-                      Start Free Access
-                    </Link>
+                    <button onClick={handleEnrollFree} disabled={enrollingFree} className="btn-primary py-3 disabled:opacity-60">
+                      {enrollingFree ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <PlayCircle className="w-5 h-5 mr-2" />}
+                      Enroll Free — Yours Forever
+                    </button>
                   ) : (
-                    <Link href={`/register?next=/learn/${courseId}`} className="btn-primary py-3">
+                    <Link href={`/register?next=/courses/${courseId}`} className="btn-primary py-3">
                       <PlayCircle className="w-5 h-5 mr-2" />
                       Create Account for Free Access
                     </Link>
@@ -370,6 +386,21 @@ export default function CoursePage() {
           
         </div>
       </main>
+
+      {/* Free Enrollment Congrats */}
+      {showCongrats && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80" onClick={() => setShowCongrats(false)}>
+          <div className="bg-[var(--bg-secondary)] border border-[var(--brand-primary)]/40 rounded-[24px] p-8 max-w-md w-full text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="text-5xl mb-4">🎉</div>
+            <h2 className="font-heading text-2xl font-bold text-[var(--text-primary)] mb-3">Hambalyo!</h2>
+            <p className="text-[var(--text-secondary)] leading-relaxed mb-2">Waxaad si guul leh ugu biirtay casharkan bilaashka ah — casharku waa kaaga weligaa.</p>
+            <p className="text-[var(--text-secondary)] text-sm mb-6">Nasiib ayaad leedahay — waxaad ka faa&apos;iidaysatay dalabka waqtiga xaddidan. Enjoy your learning journey!</p>
+            <Link href={`/learn/${courseId}`} className="btn-primary w-full py-3 flex items-center justify-center">
+              <PlayCircle className="w-5 h-5 mr-2" /> Start Learning
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Free Preview Modal */}
       {previewLesson && (

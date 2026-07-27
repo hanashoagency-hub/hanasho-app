@@ -13,13 +13,14 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-import { getPublicCoursesAction, checkPurchaseStatusAction, getCourseEnrollmentCountsAction } from "@/app/portal-live/actions";
+import { getPublicCoursesAction, checkPurchaseStatusAction, getCourseEnrollmentCountsAction, getFreePromoMapAction } from "@/app/portal-live/actions";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 export default function CoursesCatalogPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [reviewsStats, setReviewsStats] = useState<Record<string, { avg: string, count: number }>>({});
   const [enrollmentCounts, setEnrollmentCounts] = useState<Record<string, number>>({});
+  const [freePromos, setFreePromos] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const supabase = createClient();
@@ -61,6 +62,10 @@ export default function CoursesCatalogPage() {
       // Fetch total enrolled-student counts per course
       const countsRes = await getCourseEnrollmentCountsAction();
       if (countsRes.success) setEnrollmentCounts(countsRes.counts);
+
+      // Active free-course promotions (FREE NOW badges)
+      const promoRes = await getFreePromoMapAction();
+      if (promoRes.success) setFreePromos(promoRes.map);
 
       // Check purchase status for logged-in user
       const { data: { user } } = await supabase.auth.getUser();
@@ -134,10 +139,17 @@ export default function CoursesCatalogPage() {
                   </div>
                   
                   {/* Price Tag */}
-                  <div className="absolute bottom-4 right-4 bg-[var(--bg-primary)] px-4 py-1.5 rounded-[12px] border border-[var(--border-color)] shadow-sm">
-                    <span className="font-bold text-[var(--brand-primary)] text-sm">
-                      {course.price > 0 ? `$${course.price}` : "FREE"}
-                    </span>
+                  <div className="absolute bottom-4 right-4 bg-[var(--bg-primary)] px-4 py-1.5 rounded-[12px] border border-[var(--border-color)] shadow-sm text-right">
+                    {course.id in freePromos ? (
+                      <>
+                        <span className="font-bold text-green-400 text-sm block">FREE NOW <span className="line-through text-[var(--text-secondary)] font-normal text-xs">${course.price}</span></span>
+                        <span className="text-[10px] text-[var(--text-secondary)] block">Muddo xaddidan</span>
+                      </>
+                    ) : (
+                      <span className="font-bold text-[var(--brand-primary)] text-sm">
+                        {course.price > 0 ? `$${course.price}` : "FREE"}
+                      </span>
+                    )}
                   </div>
                   {purchasedIds.has(course.id) && (
                     <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg flex items-center gap-1">

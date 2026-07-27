@@ -9,6 +9,29 @@
 -- needs no percentage — it's treated as 100% off.
 ALTER TABLE public.announcements ADD COLUMN IF NOT EXISTS discount_percentage NUMERIC;
 
+-- Widen transactions.payment_method to also accept 'free_promo' — used to
+-- record permanent $0 enrollments made during free-course promotions.
+DO $$
+DECLARE
+  con_name text;
+BEGIN
+  SELECT con.conname INTO con_name
+  FROM pg_constraint con
+  JOIN pg_class rel ON rel.oid = con.conrelid
+  JOIN pg_attribute att ON att.attrelid = rel.oid AND att.attnum = ANY(con.conkey)
+  WHERE rel.relname = 'transactions'
+    AND con.contype = 'c'
+    AND att.attname = 'payment_method';
+
+  IF con_name IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE public.transactions DROP CONSTRAINT %I', con_name);
+  END IF;
+
+  ALTER TABLE public.transactions
+    ADD CONSTRAINT transactions_payment_method_check
+    CHECK (payment_method IN ('evc', 'zaad', 'sahal', 'somnet', 'card', 'free_promo'));
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.coupons (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL UNIQUE,

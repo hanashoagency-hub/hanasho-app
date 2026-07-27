@@ -577,6 +577,66 @@ export async function getActiveAnnouncementsAction(placement: string, courseId?:
   }
 }
 
+// Map of courseId -> promo end time for every currently-active
+// free-course promotion (single query, used for FREE NOW badges).
+export async function getFreePromoMapAction() {
+  try {
+    const supabaseAdmin = getAdminClient();
+    const nowIso = new Date().toISOString();
+    const { data } = await supabaseAdmin
+      .from("announcements")
+      .select("course_id, end_at")
+      .eq("is_enabled", true)
+      .eq("announcement_type", "free_course_promo")
+      .lte("start_at", nowIso)
+      .or(`end_at.is.null,end_at.gt.${nowIso}`)
+      .not("course_id", "is", null);
+
+    const map: Record<string, string | null> = {};
+    (data || []).forEach((r: any) => { map[r.course_id] = r.end_at; });
+    return { success: true, map };
+  } catch (error: any) {
+    console.error("Free Promo Map Error:", error);
+    return { success: true, map: {} as Record<string, string | null> };
+  }
+}
+
+// One-click permanent enrollment during a free promotion. Server-side
+// verifies the promo is genuinely active — the enrollment is recorded
+// through the same atomic complete_purchase path as paid checkouts
+// (amount 0, payment_method 'free_promo'), so the student keeps the
+// course forever even after the promotion ends.
+export async function enrollFreeCourseAction(courseId: string) {
+  try {
+    const { createClient: createServerClient } = await import("@/utils/supabase/server");
+    const supabaseServer = await createServerClient();
+    const { data: { user } } = await supabaseServer.auth.getUser();
+    if (!user) return { success: false, error: "Not signed in." };
+
+    const promo = await getCoursePromotionAction(courseId);
+    if (!promo.isFree) return { success: false, error: "This course is not free right now." };
+
+    const supabaseAdmin = getAdminClient();
+    const { data: result, error } = await supabaseAdmin.rpc("complete_purchase", {
+      p_user_id: user.id,
+      p_course_id: courseId,
+      p_amount: 0,
+      p_currency: "USD",
+      p_payment_method: "free_promo",
+      p_phone_number: null,
+      p_reference_id: `INV-FREE-${courseId.slice(0, 8)}-${user.id.slice(0, 8)}`,
+      p_status: "success",
+      p_waafipay_response: { source: "free_promotion" },
+    });
+    if (error) throw new Error(error.message);
+
+    return { success: true, alreadyOwned: !!result?.[0]?.already_owned };
+  } catch (error: any) {
+    console.error("Enroll Free Error:", error);
+    return { success: false, error: "Could not enroll right now. Please try again." };
+  }
+}
+
 // Full access check: purchase OR admin grant OR active free promotion,
 // gated on the account not being suspended/banned.
 export async function checkCourseAccessAction(userId: string, courseId: string) {

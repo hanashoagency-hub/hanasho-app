@@ -6,11 +6,9 @@ import Footer from "@/components/Footer";
 import FloatingDock from "@/components/navigation/FloatingDock";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import TelegramPopup from "@/components/TelegramPopup";
-import XirfadleAIWidget from "@/components/XirfadleAIWidget";
 import ThemeProvider from "@/components/ThemeProvider";
 import CartProvider from "@/components/CartProvider";
 import RainBackground from "@/components/RainBackground";
-import TutorialButton from "@/components/TutorialButton";
 import LanguageProvider from "@/i18n/LanguageProvider";
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('hanhub-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
@@ -73,8 +71,6 @@ export default function RootLayout({
               <div aria-hidden="true" style={{ height: "max(5.5rem, calc(3.5rem + env(safe-area-inset-bottom)))" }} />
               <FloatingDock />
               <TelegramPopup />
-              <TutorialButton />
-              <XirfadleAIWidget />
             </CartProvider>
           </LanguageProvider>
         </ThemeProvider>

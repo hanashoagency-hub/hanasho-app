@@ -23,6 +23,19 @@ export async function getMyTelegramInvitesAction(courseId: string) {
       return { success: false, error: "You have not purchased this course." };
     }
 
+    // Free-promotion enrollments own the course but NOT the VIP Telegram —
+    // that stays exclusive to paid members. Legacy purchases with no
+    // transaction rows predate free promos and are treated as paid.
+    const { data: txs } = await admin
+      .from("transactions")
+      .select("payment_method")
+      .eq("user_id", user.id)
+      .eq("course_id", courseId)
+      .eq("status", "success");
+    if (txs && txs.length > 0 && txs.every((t: any) => t.payment_method === "free_promo")) {
+      return { success: false, error: "VIP Telegram access is available only for paid members." };
+    }
+
     const { data: course } = await admin
       .from("courses")
       .select("title")
