@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toggleLessonCompleteAction } from '@/app/courses/actions';
-import { getPublicCourseDetailsAction, checkPurchaseStatusAction, getCoursePromotionAction, enrollFreeCourseAction } from '@/app/portal-live/actions';
+import { getPublicCourseDetailsAction, checkCourseAccessAction, getCoursePromotionAction, enrollFreeCourseAction } from '@/app/portal-live/actions';
 import { useCart } from '@/components/CartProvider';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import Link from 'next/link';
@@ -112,10 +112,11 @@ export default function CoursePage() {
         }
       }
 
-      // 5. Check Purchase Status (using server action to bypass RLS)
+      // 5. Access = purchase OR admin grant OR active subscription (promo is
+      // handled separately so a free-promo course still shows "Enroll Free").
       if (currentUser) {
-        const purchaseRes = await checkPurchaseStatusAction(currentUser.id, courseId);
-        if (purchaseRes.purchased) {
+        const accessRes = await checkCourseAccessAction(currentUser.id, courseId);
+        if (accessRes.access && accessRes.reason === "granted") {
           setHasPurchased(true);
         }
       }

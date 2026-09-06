@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Loader2, Users, Search, Shield, ShieldOff, Plus, Edit2, X, KeyRound } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { createUser, updateUserCredentials } from "./actions";
+import { searchUsersAction } from "../actions";
 import AccessModal from "./AccessModal";
 
 interface Profile {
@@ -13,6 +14,7 @@ interface Profile {
   role: string;
   phone: string;
   created_at: string;
+  email?: string;
 }
 
 export default function AdminUsersPage() {
@@ -38,6 +40,42 @@ export default function AdminUsersPage() {
     setUsers(data || []);
     setLoading(false);
   };
+
+  // Enhanced search: if query contains '@', search by email via server action
+  const [searchResults, setSearchResults] = useState<Profile[] | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (!search.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    if (search.includes("@")) {
+      const timeout = setTimeout(async () => {
+        setSearching(true);
+        const res = await searchUsersAction(search.trim());
+        if (res.success) {
+          // Merge with profile data for display
+          const enriched = res.users.map((u: any) => ({
+            id: u.id,
+            full_name: u.full_name || "No name",
+            avatar_url: u.avatar_url || "",
+            role: "student",
+            phone: "",
+            created_at: new Date().toISOString(),
+            email: u.email,
+            ...users.find((p) => p.id === u.id),
+            email_display: u.email,
+          }));
+          setSearchResults(enriched);
+        }
+        setSearching(false);
+      }, 400);
+      return () => clearTimeout(timeout);
+    } else {
+      setSearchResults(null);
+    }
+  }, [search]);
 
   useEffect(() => { fetchUsers(); }, []);
 
@@ -88,7 +126,7 @@ export default function AdminUsersPage() {
     setIsEditCredsModalOpen(true);
   };
 
-  const filtered = users.filter(u =>
+  const filtered = searchResults !== null ? searchResults : users.filter(u =>
     (u.full_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
@@ -111,7 +149,8 @@ export default function AdminUsersPage() {
       {/* Search */}
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="Search users..." />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-[#0A0A0A] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20" placeholder="Search by name or email..." />
+        {searching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-white/30" />}
       </div>
 
       {loading ? (
@@ -147,7 +186,7 @@ export default function AdminUsersPage() {
                       )}
                       <div>
                         <p className="text-white font-medium">{user.full_name || "No name"}</p>
-                        <p className="text-white/40 text-xs">{user.id.slice(0, 8)}...</p>
+                        <p className="text-white/40 text-xs">{(user as any).email_display || user.id.slice(0, 8) + "..."}</p>
                       </div>
                     </div>
                   </td>

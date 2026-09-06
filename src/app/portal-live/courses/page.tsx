@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, BookOpen, ChevronRight, Upload, ImageIcon, X } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Loader2, BookOpen, ChevronRight, Upload, ImageIcon, X, UserPlus, Search, Check } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { createCourseAction, updateCourseAction, deleteCourseAction, togglePublishAction, getAdminCoursesAction, uploadCourseCoverAction } from "../actions";
+import { createCourseAction, updateCourseAction, deleteCourseAction, togglePublishAction, getAdminCoursesAction, uploadCourseCoverAction, searchUsersAction, adminEnrollStudentAction } from "../actions";
 
 const COVER_MAX_WIDTH = 1200;
 
@@ -75,6 +75,15 @@ export default function AdminCoursesPage() {
   const [coverError, setCoverError] = useState("");
   const coverInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
+
+  // Enroll Student Modal
+  const [enrollCourse, setEnrollCourse] = useState<Course | null>(null);
+  const [enrollSearch, setEnrollSearch] = useState("");
+  const [enrollResults, setEnrollResults] = useState<any[]>([]);
+  const [enrollSearching, setEnrollSearching] = useState(false);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
+  const [enrollSuccess, setEnrollSuccess] = useState<string | null>(null);
+  const [enrollError, setEnrollError] = useState("");
 
   const handleCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -228,6 +237,46 @@ export default function AdminCoursesPage() {
     fetchCourses();
   };
 
+  const handleEnrollSearch = async () => {
+    if (!enrollSearch.trim()) return;
+    setEnrollSearching(true);
+    setEnrollError("");
+    setEnrollSuccess(null);
+    const res = await searchUsersAction(enrollSearch.trim());
+    if (res.success) {
+      setEnrollResults(res.users);
+    } else {
+      setEnrollError("Failed to search users.");
+    }
+    setEnrollSearching(false);
+  };
+
+  const handleEnrollStudent = async (userId: string, userName: string) => {
+    if (!enrollCourse) return;
+    setEnrollingId(userId);
+    setEnrollError("");
+    setEnrollSuccess(null);
+    const res = await adminEnrollStudentAction(userId, enrollCourse.id);
+    if (res.success) {
+      if (res.alreadyEnrolled) {
+        setEnrollSuccess(`${userName || 'Student'} is already enrolled in this course.`);
+      } else {
+        setEnrollSuccess(`✅ ${userName || 'Student'} has been enrolled in "${enrollCourse.title}" successfully!`);
+      }
+    } else {
+      setEnrollError(res.error || "Failed to enroll student.");
+    }
+    setEnrollingId(null);
+  };
+
+  const openEnrollModal = (course: Course) => {
+    setEnrollCourse(course);
+    setEnrollSearch("");
+    setEnrollResults([]);
+    setEnrollSuccess(null);
+    setEnrollError("");
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -276,6 +325,9 @@ export default function AdminCoursesPage() {
                 <p className="text-white/50 text-xs">{course.currency}</p>
               </div>
               <div className="flex items-center gap-2">
+                <button onClick={() => openEnrollModal(course)} className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors" title="Enroll Student">
+                  <UserPlus className="w-4 h-4" />
+                </button>
                 <Link href={`/portal-live/courses/${course.id}`} className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors" title="Manage Modules & Lessons">
                   <BookOpen className="w-4 h-4" />
                 </Link>
@@ -476,6 +528,106 @@ export default function AdminCoursesPage() {
               <button onClick={() => setShowModal(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 transition-colors">Cancel</button>
               <button onClick={handleSave} disabled={saving || !form.title} className="flex-1 py-3 rounded-xl bg-white text-black font-semibold hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : editingCourse ? "Save Changes" : "Create Course"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enroll Student Modal */}
+      {enrollCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6 overflow-y-auto">
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-white/10">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-emerald-400" /> Enroll Student
+                </h2>
+                <p className="text-white/40 text-sm mt-1">{enrollCourse.title}</p>
+              </div>
+              <button onClick={() => setEnrollCourse(null)} className="text-white/50 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Search */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <input
+                    value={enrollSearch}
+                    onChange={(e) => setEnrollSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleEnrollSearch()}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    placeholder="Search by email or name..."
+                    autoFocus
+                  />
+                </div>
+                <button
+                  onClick={handleEnrollSearch}
+                  disabled={enrollSearching || !enrollSearch.trim()}
+                  className="px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-colors disabled:opacity-50 font-medium text-sm"
+                >
+                  {enrollSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
+                </button>
+              </div>
+
+              {/* Feedback */}
+              {enrollSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
+                  <Check className="w-4 h-4 flex-shrink-0" /> {enrollSuccess}
+                </div>
+              )}
+              {enrollError && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {enrollError}
+                </div>
+              )}
+
+              {/* Results */}
+              {enrollResults.length > 0 && (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {enrollResults.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/[0.08] transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {u.avatar_url ? (
+                          <img src={u.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {(u.full_name || u.email || "?")[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-white text-sm font-medium truncate">{u.full_name || "No name"}</p>
+                          <p className="text-white/40 text-xs truncate">{u.email}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleEnrollStudent(u.id, u.full_name || u.email)}
+                        disabled={enrollingId === u.id}
+                        className="px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                      >
+                        {enrollingId === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+                        Enroll
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {enrollResults.length === 0 && !enrollSearching && enrollSearch && !enrollSuccess && (
+                <p className="text-center text-white/30 text-sm py-4">No results. Try searching by email or name.</p>
+              )}
+
+              <p className="text-xs text-white/30 leading-relaxed">
+                Enrolled students get permanent lifetime access to this course, identical to a purchase. The course will appear on their Dashboard immediately.
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-white/10">
+              <button onClick={() => setEnrollCourse(null)} className="w-full py-3 rounded-xl border border-white/10 text-white font-medium hover:bg-white/5 transition-colors">
+                Close
               </button>
             </div>
           </div>

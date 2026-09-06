@@ -6,6 +6,7 @@ import Link from "next/link";
 import RewardsWidget from "@/components/RewardsWidget";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import FreeOffersWidget from "@/components/FreeOffersWidget";
+import { getAccessibleCourseIds } from "@/utils/access";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -14,23 +15,29 @@ export default async function DashboardPage() {
 
   if (!user) return null;
 
-  // Fetch purchased courses using admin client to bypass RLS
+  // "My Courses" = everything the student can access: direct purchases PLUS
+  // active subscriptions, individual admin grants, and blanket all-access.
   let purchases: any[] = [];
+  let purchasedCourses: any[] = [];
   try {
-    const { data, error } = await supabaseAdmin
+    const { data } = await supabaseAdmin
       .from("purchases")
       .select("course_id, courses(id, title, cover_image, description)")
       .eq("user_id", user.id);
-    
-    if (error) {
-      console.error("Dashboard purchases fetch error:", error);
-    }
     purchases = data || [];
+
+    const accessibleIds = await getAccessibleCourseIds(user.id);
+    if (accessibleIds.length > 0) {
+      const { data: accessibleCourses } = await supabaseAdmin
+        .from("courses")
+        .select("id, title, cover_image, description")
+        .in("id", accessibleIds);
+      purchasedCourses = accessibleCourses || [];
+    }
   } catch (err) {
-    console.error("Dashboard purchases fetch error:", err);
+    console.error("Dashboard course access fetch error:", err);
   }
 
-  const purchasedCourses = (purchases?.map(p => p.courses) || []).filter(Boolean) as any[];
   const courseIds = purchasedCourses.map((c: any) => c?.id).filter(Boolean);
 
   // Fetch enrolled diplomas

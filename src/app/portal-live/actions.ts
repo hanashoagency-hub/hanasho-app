@@ -739,3 +739,142 @@ export async function getCoursePromotionAction(courseId: string) {
     return { success: true, isFree: false, discountPercentage: 0, endsAt: null };
   }
 }
+
+export async function searchUsersAction(query: string) {
+  try {
+    const supabaseAdmin = await getAdminClient();
+    
+    // 1. Query auth users
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000
+    });
+    
+    if (authError) {
+      console.error("Auth list users error:", authError);
+    }
+    
+    // 2. Query profiles
+    const { data: profilesData, error: profilesError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .ilike('full_name', `%${query}%`);
+      
+    if (profilesError) {
+      console.error("Profiles query error:", profilesError);
+    }
+    
+    const queryLower = query.toLowerCase();
+    const matchedUsers: Record<string, any> = {};
+    
+    // Process auth users matching query
+    if (authData && authData.users) {
+      for (const user of authData.users) {
+        if (user.email && user.email.toLowerCase().includes(queryLower)) {
+          matchedUsers[user.id] = {
+            id: user.id,
+            email: user.email,
+            full_name: null,
+            avatar_url: null
+          };
+        }
+      }
+    }
+    
+    // Process profile users matching query
+    if (profilesData) {
+      for (const profile of profilesData) {
+        if (!matchedUsers[profile.id]) {
+          matchedUsers[profile.id] = {
+            id: profile.id,
+            email: null,
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url
+          };
+        } else {
+          matchedUsers[profile.id].full_name = profile.full_name;
+          matchedUsers[profile.id].avatar_url = profile.avatar_url;
+        }
+      }
+    }
+    
+    // Fill missing data
+    for (const id in matchedUsers) {
+      if (!matchedUsers[id].email) {
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(id);
+        if (userData && userData.user) {
+          matchedUsers[id].email = userData.user.email;
+        }
+      }
+      if (!matchedUsers[id].full_name && matchedUsers[id].full_name !== undefined) {
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', id)
+          .maybeSingle();
+        if (profile) {
+          matchedUsers[id].full_name = profile.full_name;
+          matchedUsers[id].avatar_url = profile.avatar_url;
+        }
+      }
+    }
+    
+    const users = Object.values(matchedUsers).slice(0, 20);
+    return { success: true, users };
+    
+  } catch (error: any) {
+    console.error("Search Users Error:", error);
+    return { success: false, users: [] };
+  }
+}
+
+export async function adminEnrollStudentAction(userId: string, courseId: string) {
+  try {
+    const supabaseAdmin = await getAdminClient();
+    
+    // Check if purchase already exists
+    const { data: existingPurchase, error: checkError } = await supabaseAdmin
+      .from('purchases')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .maybeSingle();
+      
+    if (checkError) throw checkError;
+    
+    if (existingPurchase) {
+      return { success: true, alreadyEnrolled: true };
+    }
+    
+    // Insert new purchase
+    const { error: insertError } = await supabaseAdmin
+      .from('purchases')
+      .insert({ user_id: userId, course_id: courseId });
+      
+    if (insertError) throw insertError;
+    
+    // Provision Telegram access
+    try {
+      const { provisionTelegramAccessForPurchase } = await import('@/utils/telegramInvites');
+      const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', userId).maybeSingle();
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+      await provisionTelegramAccessForPurchase({
+        userId,
+        userEmail: authUser?.user?.email,
+        userName: profile?.full_name,
+        courseId,
+      });
+    } catch (teleErr) {
+      console.error('Telegram provisioning failed (non-fatal):', teleErr);
+    }
+    
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/my-courses');
+    revalidatePath('/courses');
+    
+    return { success: true, alreadyEnrolled: false };
+    
+  } catch (error: any) {
+    console.error("Admin Enroll Student Error:", error);
+    return { success: false, error: error.message, alreadyEnrolled: false };
+  }
+}
