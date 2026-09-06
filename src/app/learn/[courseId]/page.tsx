@@ -421,11 +421,14 @@ export default function LearnPage() {
                   ></div>
                 </>
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-secondary)]">
+                <div 
+                  className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-secondary)] cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => setIsSidebarOpen(true)}
+                >
                   <div className="relative">
-                    <button className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border border-[var(--border-color)] flex items-center justify-center transition-all duration-300">
+                    <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full border border-[var(--border-color)] flex items-center justify-center transition-all duration-300">
                       <PlayCircle className="w-10 h-10 md:w-12 md:h-12 text-[var(--border-color)] ml-1.5" />
-                    </button>
+                    </div>
                   </div>
                   <p className="text-[var(--text-secondary)] text-sm font-bold">Select a lesson from the curriculum to start learning</p>
                 </div>
@@ -439,8 +442,8 @@ export default function LearnPage() {
              </h1>
              
              <button
-                onClick={toggleComplete}
-                disabled={!currentLessonId || savingProgress}
+                onClick={!currentLessonId ? () => setIsSidebarOpen(true) : toggleComplete}
+                disabled={savingProgress}
                 className={`flex items-center px-6 py-3 rounded-[20px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   currentLessonDone
                     ? "bg-[var(--brand-primary)] text-[var(--on-brand)]"
