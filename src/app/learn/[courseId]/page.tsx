@@ -86,6 +86,16 @@ export default function LearnPage() {
 
         if (res.modules.length > 0) {
           setActiveModule(res.modules[0].id);
+          const firstLesson = res.modules[0].lessons?.[0];
+          if (firstLesson) {
+            setCurrentLessonType(firstLesson.lesson_type === 'pdf' ? 'pdf' : 'video');
+            setCurrentVideoId(firstLesson.youtube_video_id || null);
+            setCurrentPdfUrl(firstLesson.pdf_url || null);
+            setCurrentLessonId(firstLesson.id);
+            setCurrentLessonTitle(firstLesson.title);
+            setCurrentLessonDesc(firstLesson.description || "In this lesson, you will learn new concepts related to this module.");
+            setActiveTab('content');
+          }
         }
       }
 
@@ -284,22 +294,32 @@ export default function LearnPage() {
               className="rounded-[16px] border border-[var(--border-color)] bg-[var(--bg-primary)] overflow-hidden transition-all duration-300"
             >
               <button 
-                onClick={() => setActiveModule(activeModule === module.id ? null : module.id)}
+                onClick={(e) => {
+                  const isOpening = activeModule !== module.id;
+                  setActiveModule(isOpening ? module.id : null);
+                  if (isOpening) {
+                    const target = e.currentTarget;
+                    setTimeout(() => {
+                      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 150);
+                  }
+                }}
                 className="w-full flex items-center justify-between p-4 hover:bg-[var(--bg-secondary)] transition-colors"
               >
                 <div className="text-left">
                   <span className="text-xs text-[var(--brand-primary)] font-bold uppercase tracking-wider">Module {mIndex + 1}</span>
                   <h3 className="font-bold text-sm text-[var(--text-primary)] mt-1 font-heading">{module.title}</h3>
                 </div>
-                {activeModule === module.id ? 
-                  <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" /> : 
-                  <ChevronRight className="w-4 h-4 text-[var(--text-secondary)]" />
-                }
+                <ChevronRight 
+                  className={`w-4 h-4 text-[var(--text-secondary)] transition-transform duration-300 ${
+                    activeModule === module.id ? 'rotate-90' : ''
+                  }`} 
+                />
               </button>
               
               <div 
-                className={`transition-all duration-300 ease-in-out ${
-                  activeModule === module.id ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+                className={`transition-all duration-500 ease-in-out ${
+                  activeModule === module.id ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
                 } overflow-hidden`}
               >
                 <div className="px-2 pb-2">
