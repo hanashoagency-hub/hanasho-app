@@ -27,6 +27,7 @@ import { useCart } from '@/components/CartProvider';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
 import Link from 'next/link';
 import CourseReviewSection from './CourseReviewSection';
+import CourseVideoPlayer from '@/components/CourseVideoPlayer';
 
 export default function CoursePage() {
   const params = useParams();
@@ -445,21 +446,13 @@ export default function CoursePage() {
                 ></iframe>
               </div>
             ) : (
-              <div className="relative w-full aspect-video bg-black">
-                {previewLesson.youtube_video_id ? (
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${previewLesson.youtube_video_id}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&playsinline=1`}
-                    title={previewLesson.title}
-                    className="absolute inset-0 w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-[var(--text-secondary)] text-sm font-bold">
-                    No video available for this lesson.
-                  </div>
-                )}
-              </div>
+              previewLesson.youtube_video_id ? (
+                <CourseVideoPlayer videoId={previewLesson.youtube_video_id} title={previewLesson.title} />
+              ) : (
+                <div className="relative w-full aspect-video bg-black flex items-center justify-center text-[var(--text-secondary)] text-sm font-bold">
+                  No video available for this lesson.
+                </div>
+              )
             )}
           </div>
         </div>

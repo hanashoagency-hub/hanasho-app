@@ -25,6 +25,7 @@ import { toggleLessonCompleteAction } from '@/app/courses/actions';
 import { getPublicCourseDetailsAction, checkCourseAccessAction } from '@/app/portal-live/actions';
 import { getMyTelegramInvitesAction } from '@/app/learn/telegram-actions';
 import Link from 'next/link';
+import CourseVideoPlayer from '@/components/CourseVideoPlayer';
 
 export default function LearnPage() {
   const params = useParams();
@@ -403,24 +404,10 @@ export default function LearnPage() {
               </a>
             </div>
           ) : (
-            <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
-              {currentVideoId ? (
-                <>
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&playsinline=1`}
-                    title={currentLessonTitle}
-                    className="absolute inset-0 w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    sandbox="allow-scripts allow-same-origin allow-presentation"
-                  ></iframe>
-                  {/* Overlay to block clicking the top Share / Copy Link buttons */}
-                  <div 
-                    className="absolute top-0 left-0 w-full h-[70px] z-10 bg-transparent" 
-                    onContextMenu={(e) => e.preventDefault()}
-                  ></div>
-                </>
-              ) : (
+            currentVideoId ? (
+              <CourseVideoPlayer videoId={currentVideoId} title={currentLessonTitle} />
+            ) : (
+              <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
                 <div 
                   className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-secondary)] cursor-pointer hover:bg-white/5 transition-colors"
                   onClick={() => setIsSidebarOpen(true)}
@@ -432,8 +419,8 @@ export default function LearnPage() {
                   </div>
                   <p className="text-[var(--text-secondary)] text-sm font-bold">Select a lesson from the curriculum to start learning</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )
           )}
 
           <div className="mt-8 mb-6 flex items-center justify-between flex-wrap gap-4">
