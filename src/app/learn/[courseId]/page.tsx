@@ -164,6 +164,22 @@ export default function LearnPage() {
 
     if (res.completedLessonIds) setCompletedIds(new Set(res.completedLessonIds));
     if (res.certificate) setCertificate(res.certificate);
+
+    // If we just marked it as complete, auto-advance to next lesson
+    if (!isDone) {
+      const allLessons = modules.flatMap(m => m.lessons);
+      const currentIndex = allLessons.findIndex(l => l.id === currentLessonId);
+      if (currentIndex !== -1 && currentIndex + 1 < allLessons.length) {
+        const nextLesson = allLessons[currentIndex + 1];
+        playLesson(nextLesson);
+        
+        // Ensure the module for the next lesson is expanded
+        const nextModule = modules.find(m => m.lessons.some((l: any) => l.id === nextLesson.id));
+        if (nextModule && activeModule !== nextModule.id) {
+          setActiveModule(nextModule.id);
+        }
+      }
+    }
   };
 
   const completedCount = completedIds.size;
@@ -369,13 +385,21 @@ export default function LearnPage() {
           ) : (
             <div className="relative w-full aspect-video rounded-[20px] md:rounded-[24px] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-sm">
               {currentVideoId ? (
-                <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&playsinline=1`}
-                  title={currentLessonTitle}
-                  className="absolute inset-0 w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+                <>
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${currentVideoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&playsinline=1`}
+                    title={currentLessonTitle}
+                    className="absolute inset-0 w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                  ></iframe>
+                  {/* Overlay to block clicking the top Share / Copy Link buttons */}
+                  <div 
+                    className="absolute top-0 left-0 w-full h-[70px] z-10 bg-transparent" 
+                    onContextMenu={(e) => e.preventDefault()}
+                  ></div>
+                </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-secondary)]">
                   <div className="relative">
